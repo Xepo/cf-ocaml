@@ -1,4 +1,3 @@
-let _ = print_string "beg\n"
 open Core.Std
 ;;
 
@@ -205,7 +204,11 @@ let ( =| ) = Matrix.( =|)
 module Rect = struct
      type t = Vec.t * Vec.t
 
+     let normalize ((x1,y1),(x2,y2)) =
+          (((min x1 x2), (min y1 y2)), ((max x1 x2), (max y1 y2)))
+
      let expand r (v1,v2) =
+          let r = normalize r in
           let f  (x3,y3) ((x1,y1),(x2,y2)) =
                (min x1 x3, min y1 y3), (max x2 x3, max y2 y3)
           in
@@ -227,17 +230,17 @@ module Rect = struct
 
      let expand_unit t =
           expand_and_apply t unit_rect ((-.0.5, 0.5),(0.5,-.0.5))
+
+     let pt_in_rect r (x,y) = 
+          let ((x1,y1),(x2,y2)) = normalize r in
+          ((x1 <= x) && (x <= x2)) && ((y1 <= y) && (y <= y2))
 end
-let _ = 
-     printf "rotted:%s\n\n" (Vec.to_string ((Matrix.rotate 45.) *|$ (3.,2.)))
 
 let test () = 
      let v:Vec.t = (5.0,5.0) in
      let m = Matrix.identity in
      let r:Vec.t = m *|$ v in
      assert (r =$ v);
-     (*printf "%s *| %s = %s" (Matrix.to_string m) (Matrix.to_string m)
-      * (Matrix.to_string (m *| m));*)
      assert ((m *| m) =| m);
 
      let m1 = (Matrix.translate 5. 1.) *| (Matrix.translate 10. 2.) in
@@ -282,6 +285,9 @@ let fold_int_range ~init ~f lower upper =
      done;
      !acc
 
+exception Found_pixel
+exception Invalid_pixel
+
 module Outputtable = struct
      type t = 
           {
@@ -293,7 +299,15 @@ module Outputtable = struct
           }
 
      let set_pixel t (x,y) ~v =
-          t.image.(y * t.pixelwidth + x) <- v
+          let loc = y * t.pixelwidth + x in
+          if x > t.pixelwidth || x < 0 || y > t.pixelheight || y < 0 then
+               raise Invalid_pixel
+          else
+          t.image.(loc) <- v
+          (*;
+          if loc = 12944
+          then
+               raise Found_pixel*)
 
      let pixel_to_space t (x,y) =
           let ibase = Matrix.invert t.base in
@@ -321,7 +335,16 @@ module Outputtable = struct
                     let tvec = ibase *|$ (Vec.of_ints (x,y)) in
                     match f tvec with
                     | None -> ()
-                    | Some v -> set_pixel t (x,y) ~v
+                    | Some v -> 
+                              try 
+                                   set_pixel t (x,y) ~v
+                              with
+                              | Found_pixel -> 
+                                        printf "%d,%d-%d,%d" x1 y1 x2 y2;
+                                        printf "%s" 
+                                        (Rect.to_string (Rect.apply 
+                                        (Vec.of_ints (x1,y1),Vec.of_ints (x2,y2)) ibase));
+                                        raise Found_pixel
                done
           done
 
@@ -383,6 +406,13 @@ module Outputtable = struct
           sprintf "Viewport:%f %f %f %f\n%s\n" lx ly hx hy (to_string_all t)
 
 
+
+     let write_arr t filename =
+          let chan = open_out filename in
+          fprintf chan "%d,%d\n" t.pixelwidth t.pixelheight;
+          Array.iteri t.image ~f:(fun i x ->
+               fprintf chan "%d" x)
+
      let write t filename =
           let chan = open_out filename in
           fprintf chan "%d,%d\n" t.pixelwidth t.pixelheight;
@@ -390,7 +420,10 @@ module Outputtable = struct
           do
                for y = 0 to (t.pixelheight-1)
                do
-                    fprintf chan "%d" t.image.(t.pixelwidth*y+x)
+                    let pixel = t.image.(t.pixelwidth*y+x) in
+                    if x < 50 && pixel > 0 then
+                         printf "PT:%d\n" pixel;
+                    fprintf chan "%d" pixel
                done;
                fprintf chan "\n"
           done
@@ -431,7 +464,6 @@ module Context = struct
 
      let iterate_unit ~f output t = 
           let rc = Rect.expand_unit t in
-          printf " con:%s\n%s\n\n" (Rect.to_string rc) (Matrix.to_string t);
           let it = Matrix.invert t in
           Outputtable.iter rc output ~f:(fun vec ->
                let tvec = it *|$ vec in
@@ -447,6 +479,10 @@ module Basic_shape = struct
      type t = 
           | Circle
           | Square
+
+     let to_string = function
+          | Circle -> "circle"
+          | Square -> "square"
 
      let render : v:Pixel.t -> Outputtable.t ->  Context.t -> t -> unit = 
           fun ~v ->
@@ -475,31 +511,44 @@ module Renderable = struct
                value : Pixel.t;
                context : Context.t;
                shape : t Shapes.t;
+               trace : string;
           }
 
      let apply_context t context = 
           { t with context = context *| t.context; }
 
+     let add_trace str = 
+          List.map ~f:(fun r -> {r with trace=str ^ "(" ^ r.trace ^ ")"})
      let rec expand t = 
           match t.shape with
           | Shapes.Basic _ -> [t]
           | Shapes.Fcn f ->
-               List.fold (f ()) ~init:[] 
-               ~f:(fun acc new_t ->
-                    let new_t = apply_context new_t t.context in
-                    new_t :: acc)
+               add_trace t.trace 
+               (
+                    List.fold (f ()) ~init:[] 
+                         ~f:(fun acc new_t ->
+                              let new_t = apply_context new_t t.context in
+                              new_t :: acc)
+               )
+
 
      let rec render output t = 
           match t.shape with
           | Shapes.Basic basic ->
                     printf "Rendering basic...\n";
-                    (Basic_shape.render ~v:t.value output t.context basic)
+                    begin try
+                         (Basic_shape.render ~v:t.value output t.context basic)
+                    with
+                         | Found_pixel -> printf "!!!!found_pixel:%s %s\n" t.trace
+                         (Matrix.to_string t.context)
+                    end
           | Shapes.Fcn f -> ()
 
      let create_basic ~v context shape =
-          { value=v; context; shape=Shapes.Basic shape; }
-     let of_fcn context fcn =
-          { value=0; context; shape=Shapes.Fcn fcn; }
+          { value=v; context; shape=Shapes.Basic shape;
+          trace=Basic_shape.to_string shape}
+     let of_fcn ~trace context fcn =
+          { value=0; context; shape=Shapes.Fcn fcn; trace}
      let is_basic t =
           match t.shape with
           | Shapes.Basic _ -> true
@@ -511,12 +560,17 @@ module Scene = struct
      let apply_value v r = {r with Renderable.value=v}
      let apply_context c r = Renderable.apply_context r c
 
-     let shape f = 
-          [Renderable.of_fcn Matrix.identity f]
+     let shape ?(trace="") f = 
+          [Renderable.of_fcn ~trace Matrix.identity f]
      let circle = 
           [Renderable.create_basic ~v:0 Matrix.identity Basic_shape.Circle]
      let square = 
           [Renderable.create_basic ~v:0 Matrix.identity Basic_shape.Square]
+
+     let add_trace trace s =
+          Renderable.add_trace trace s
+
+
 
      let apply_list lr f = 
           List.map lr ~f
@@ -528,52 +582,45 @@ module Scene = struct
      let sc x y = apply_context (Matrix.scale x y)
      let rot d = apply_context (Matrix.rotate d)
      let v v = apply_value v 
-     let ( !! ) v = shape
-     let ( >>= ) _ f = shape f
 
-     let t () =
-          square
      let rec f () =
-          circle + (sc 4. 4.) + (tr 2. 4.) + (v 9) ++ 
-          circle + (tr (-2.) (-4.)) + (v 9) 
-          ++ shape f   + (rot 45.)+ (tr (-5.) (-5.)) + (sc 0.5 0.5)
-     let f () =
-          square + (v 9) + (rot 45.)
-
-
+          square + (v 9)
+          ++ shape f + (rot 1.)+ (tr (0.01) (0.01)) + (sc 0.98 0.98)
 
 end
 
-let _ = 
-     let m = Matrix.invert (Matrix.rotate 45.) in
-     let f (x1,y1) =
-          let (x,y) = m *|$ (x1,y1) in
-          printf "%f,%f=%f,%f\n" x1 y1 x y
-     in
-     printf "%s" (Matrix.to_string m);
-     f (1.,1.);
-     f (1.,2.);
-     f (2.,1.);
-     f (2.,2.)
+
+
+let rec repeat ~f x n =
+     if n > 0 
+     then
+          repeat ~f (f x) (n-1)
+     else
+          x
+
+     
+let split_fcns_basics =
+     List.fold ~init:([],[]) ~f:(fun (basics, fcns) s ->
+          match s.Renderable.shape with
+          | Renderable.Shapes.Basic _ -> ((s :: basics), fcns)
+          | Renderable.Shapes.Fcn _ -> (basics, (s :: fcns)))
 
 
 
 let main () =
      printf "init\n";
      let output = Outputtable.create ~pixelwidth:(700) ~pixelheight:(700) ~alias:3 () in
-     let ex l = List.concat (List.map l ~f:Renderable.expand) in
-     let shapes = ex (Scene.f ()) |! ex |! ex |! ex in
-     (*
+     let ex (basics, fcns) =
+          let (b,f) = split_fcns_basics 
+           (List.concat (List.map fcns ~f:Renderable.expand) )
+          in
+          (b @ basics, f @ fcns)
+     in
+     let shapes = Scene.f () in
+     let (basics,fcns) = repeat ~f:ex  ([], shapes) 20 in
+     let shapes = basics @ fcns in
+     List.iter shapes ~f:(fun x -> printf "shape:%s\n" x.Renderable.trace);
 
-     let context = (Matrix.scale 0.75 0.75) *| (Matrix.translate 1. 1.) in
-     let context2 = (Matrix.scale 0.3 0.75) *| (Matrix.translate (0.-. 5.) 1.) in
-let shapes = 
-          [
-               Renderable.create_basic ~v:9 Matrix.identity Basic_shape.Circle ;
-               Renderable.create_basic ~v:2 context Basic_shape.Circle ;
-               Renderable.create_basic ~v:2 context2 Basic_shape.Square ;
-          ]
-     in*)
      let rc = List.fold shapes ~init:None ~f:(fun
           rc shape -> 
                if Renderable.is_basic shape 
@@ -593,7 +640,7 @@ let shapes =
      in
      printf "%s\n" (Outputtable.string_of_viewport output);
      let aliased = Outputtable.antialias output in
-     Outputtable.write aliased "image.in";
+     Outputtable.write_arr aliased "image.in";
      printf "Done\n"
      (*printf "%s\n" (Outputtable.to_string output)*)
 
