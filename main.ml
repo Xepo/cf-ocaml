@@ -6,6 +6,7 @@ module Pixel = struct
      type t = int
 end
 
+let pi = 3.14159
 let t2_order x1 x2 = if x1 <. x2 then (x1,x2) else (x2,x1)
 module Vec = struct
      type t = float * float
@@ -101,13 +102,12 @@ module Matrix = struct
           let (i,j) = l_to_i l in
           set_i m i j v
 
-     let ( *|$ ) ((m11,m12,m13),(m21,m22,m23),(m31,m32,m33)) (x,y) : Vec.t = 
-          ((x *. m11 +. y *. m12 +. m13),
-          (x *. m21 +. y *. m22 +. m23))
-
-
      let col m j = (get_i m `i1 j, get_i m `i2 j, get_i m `i3 j)
      let row = t3_get
+
+     let ( *|$ ) m (x,y) : Vec.t = 
+          let f (c1,c2,c3) = x *. c1 +. y *. c2 +. c3 in
+          (f (row m `i1), f (row m `i2))
 
      let ( *| ) m1 m2 =
           let row_col i j = 
@@ -171,6 +171,7 @@ module Matrix = struct
           idet *|. newm
 
 
+
      let to_string (r1,r2,r3) = 
           let row_to_string (c1,c2,c3) = sprintf "%f,%f,%f" c1 c2 c3 in
           sprintf "[%s\n %s\n %s]" 
@@ -178,7 +179,7 @@ module Matrix = struct
           (row_to_string r2)
           (row_to_string r3)
 
-     let translation x y =
+     let translate x y =
           identity
           |! set ~l:`l13 ~v:x
           |! set ~l:`l23 ~v:y
@@ -187,12 +188,49 @@ module Matrix = struct
           identity
           |! set ~l:`l11 ~v:x
           |! set ~l:`l22 ~v:y
+
+     let rotate d = 
+          let d = (d *. pi /. 180.) in
+          create
+               (cos d, 0. -. sin d, 0.)
+               (sin d,    cos d, 0.)
+               (0.,0.,1.)
+
 end
+
 let ( *|$ ) = Matrix.( *|$ )
 let ( *| ) = Matrix.( *|)
 let ( =| ) = Matrix.( =|)
 
-(*
+module Rect = struct
+     type t = Vec.t * Vec.t
+
+     let expand r (v1,v2) =
+          let f  (x3,y3) ((x1,y1),(x2,y2)) =
+               (min x1 x3, min y1 y3), (max x2 x3, max y2 y3)
+          in
+          f v2 (f v1 r)
+
+     let apply (v1,v2) m = 
+          (m *|$ v1, m *|$ v2)
+
+     let expand_and_apply t r1 r2 =
+          expand (apply r1 t) (apply r2 t)
+
+     let to_string (v1,v2) = 
+          sprintf "(%s-%s)" (Vec.to_string v1) (Vec.to_string v2)
+
+     let unit_rect = ((-0.5,-0.5), (0.5,0.5))
+
+     let normalize ((x1,y1),(x2,y2)) =
+          (((min x1 x2), (min y1 y2)), ((max x1 x2), (max y1 y2)))
+
+     let expand_unit t =
+          expand_and_apply t unit_rect ((-.0.5, 0.5),(0.5,-.0.5))
+end
+let _ = 
+     printf "rotted:%s\n\n" (Vec.to_string ((Matrix.rotate 45.) *|$ (3.,2.)))
+
 let test () = 
      let v:Vec.t = (5.0,5.0) in
      let m = Matrix.identity in
@@ -202,14 +240,14 @@ let test () =
       * (Matrix.to_string (m *| m));*)
      assert ((m *| m) =| m);
 
-     let m1 = (Matrix.translation 5. 1.) *| (Matrix.translation 10. 2.) in
-     let m2 = (Matrix.translation 15. 3.) in
+     let m1 = (Matrix.translate 5. 1.) *| (Matrix.translate 10. 2.) in
+     let m2 = (Matrix.translate 15. 3.) in
      assert (m1 =| m2);
      assert ((m1 *|$ v) =$ (m2 *|$ v));
 
 
      let v:Vec.t = (5.0,-1.0) in
-     let m1 = Matrix.translation 5. 1. in
+     let m1 = Matrix.translate 5. 1. in
      assert ((m1 *|$ v) =$ (10.0,0.0));
 
      let v:Vec.t = (5.0,-1.0) in
@@ -224,17 +262,18 @@ let test () =
      assert ((Matrix.invert m1) =| m2);
 
      let sc = Matrix.scale 2. 4. in
-     let tr = Matrix.translation 10. 5. in
+     let tr = Matrix.translate 10. 5. in
      let m = sc *| tr in
      Vec.assert_equal 
      ((m *|$ (0.,0.))) (20.,20.);
 
      let v = (30.,-30.) in
-     let m = Matrix.translation 10. 5. in
+     let m = Matrix.translate 10. 5. in
      let m2 = Matrix.invert m in
      let v2 = m2 *|$ v in
      Vec.assert_equal v2 (20.,-35.)
-     *)
+
+
 
 let fold_int_range ~init ~f lower upper = 
      let acc = ref init in
@@ -242,10 +281,6 @@ let fold_int_range ~init ~f lower upper =
           acc := f (!acc) x
      done;
      !acc
-
-
-
-
 
 module Outputtable = struct
      type t = 
@@ -265,7 +300,7 @@ module Outputtable = struct
           ibase *|$ (Vec.of_ints (x,y))
 
 
-     let iter (x1,y1) (x2,y2) ~f t =
+     let iter ((x1,y1),(x2,y2)) ~f t =
           let (x1,x2) = t2_order x1 x2 in
           let (y1,y2) = t2_order y1 y2 in
           let (x1,y1) = t.base *|$ (x1,y1) in
@@ -290,7 +325,7 @@ module Outputtable = struct
                done
           done
 
-     let new_viewport t (x1,y1) (x2,y2) =
+     let new_viewport t ((x1,y1),(x2,y2)) =
           let (x1,x2) = t2_order x1 x2 in
           let (y1,y2) = t2_order y1 y2 in
           let ratio = (float_of_int t.pixelwidth) /. (float_of_int t.pixelheight) in
@@ -303,7 +338,7 @@ module Outputtable = struct
                Matrix.scale 
                     ((float_of_int t.pixelwidth) /. viewport_width) 
                     ((float_of_int t.pixelheight) /. viewport_height)
-               *| Matrix.translation (0. -. x1) (0. -. y1)
+               *| Matrix.translate (0. -. x1) (0. -. y1)
           in
           {t with base}
 
@@ -313,7 +348,7 @@ module Outputtable = struct
           let pixelheight  = pixelheight*alias in
           let base = 
                (Matrix.scale (float_of_int pixelwidth) (float_of_int pixelheight))
-               *| (Matrix.translation (0.5) (0.5))
+               *| (Matrix.translate (0.5) (0.5))
           in
           let image = Array.create (pixelwidth*pixelheight) 0 in
           { pixelwidth; pixelheight; base; image; alias_amt=alias;}
@@ -360,6 +395,7 @@ module Outputtable = struct
                fprintf chan "\n"
           done
 
+
      let antialias t =
           let aliased =
                create ~pixelwidth:(t.pixelwidth / t.alias_amt) ~pixelheight:(t.pixelheight
@@ -383,7 +419,7 @@ module Outputtable = struct
 end
 let test () = 
      let output = Outputtable.create ~pixelwidth:20 ~pixelheight:20 () in
-     let output = Outputtable.new_viewport output ((-5.),(-5.)) (5.,5.) in
+     let output = Outputtable.new_viewport output (((-5.),(-5.)),(5.,5.)) in
      let (x1,y1) = (Outputtable.pixel_to_space output (0,0)) in
      let (x2,y2) = (Outputtable.pixel_to_space output
      (output.Outputtable.pixelwidth,output.Outputtable.pixelheight)) in
@@ -394,10 +430,10 @@ module Context = struct
      type t = Matrix.t
 
      let iterate_unit ~f output t = 
-          let bl = t *|$ (-0.5,-0.5) in
-          let tr = t *|$ (0.5,0.5) in
+          let rc = Rect.expand_unit t in
+          printf " con:%s\n%s\n\n" (Rect.to_string rc) (Matrix.to_string t);
           let it = Matrix.invert t in
-          Outputtable.iter bl tr output ~f:(fun vec ->
+          Outputtable.iter rc output ~f:(fun vec ->
                let tvec = it *|$ vec in
                if Vec.in_unit tvec
                then 
@@ -446,7 +482,7 @@ module Renderable = struct
 
      let rec expand t = 
           match t.shape with
-          | Shapes.Basic _ -> []
+          | Shapes.Basic _ -> [t]
           | Shapes.Fcn f ->
                List.fold (f ()) ~init:[] 
                ~f:(fun acc new_t ->
@@ -472,47 +508,85 @@ end
 
 module Scene = struct
 
-     let circle = Renderable.create_basic ~v:0 Matrix.identity Basic_shape.Circle
-     let square = Renderable.create_basic ~v:0 Matrix.identity Basic_shape.Square
+     let apply_value v r = {r with Renderable.value=v}
+     let apply_context c r = Renderable.apply_context r c
 
-     let ( + ) r c = Renderable.apply_context r c
-     let tr x y = Matrix.translation x y
+     let shape f = 
+          [Renderable.of_fcn Matrix.identity f]
+     let circle = 
+          [Renderable.create_basic ~v:0 Matrix.identity Basic_shape.Circle]
+     let square = 
+          [Renderable.create_basic ~v:0 Matrix.identity Basic_shape.Square]
 
-     let f () = 
-          [
-               circle + (tr 2. 4.);
-               circle + (tr (-2.) (-3.));
-          ]
+     let apply_list lr f = 
+          List.map lr ~f
+
+     let ( + ) f tr = apply_list f tr
+     let ( ++ ) f1 f2 = f1 @ f2
+
+     let tr x y = apply_context (Matrix.translate x y)
+     let sc x y = apply_context (Matrix.scale x y)
+     let rot d = apply_context (Matrix.rotate d)
+     let v v = apply_value v 
+     let ( !! ) v = shape
+     let ( >>= ) _ f = shape f
+
+     let t () =
+          square
+     let rec f () =
+          circle + (sc 4. 4.) + (tr 2. 4.) + (v 9) ++ 
+          circle + (tr (-2.) (-4.)) + (v 9) 
+          ++ shape f   + (rot 45.)+ (tr (-5.) (-5.)) + (sc 0.5 0.5)
+     let f () =
+          square + (v 9) + (rot 45.)
+
+
+
 end
+
+let _ = 
+     let m = Matrix.invert (Matrix.rotate 45.) in
+     let f (x1,y1) =
+          let (x,y) = m *|$ (x1,y1) in
+          printf "%f,%f=%f,%f\n" x1 y1 x y
+     in
+     printf "%s" (Matrix.to_string m);
+     f (1.,1.);
+     f (1.,2.);
+     f (2.,1.);
+     f (2.,2.)
+
+
 
 let main () =
      printf "init\n";
      let output = Outputtable.create ~pixelwidth:(700) ~pixelheight:(700) ~alias:3 () in
-     let context = (Matrix.scale 0.75 0.75) *| (Matrix.translation 1. 1.) in
-     let context2 = (Matrix.scale 0.3 0.75) *| (Matrix.translation (0.-. 5.) 1.) in
-     let shapes = 
+     let ex l = List.concat (List.map l ~f:Renderable.expand) in
+     let shapes = ex (Scene.f ()) |! ex |! ex |! ex in
+     (*
+
+     let context = (Matrix.scale 0.75 0.75) *| (Matrix.translate 1. 1.) in
+     let context2 = (Matrix.scale 0.3 0.75) *| (Matrix.translate (0.-. 5.) 1.) in
+let shapes = 
           [
                Renderable.create_basic ~v:9 Matrix.identity Basic_shape.Circle ;
                Renderable.create_basic ~v:2 context Basic_shape.Circle ;
                Renderable.create_basic ~v:2 context2 Basic_shape.Square ;
           ]
-     in
-     let (x1,y1,x2,y2) = List.fold shapes ~init:(0.,0.,0.,0.) ~f:(fun
-          (x1,y1,x2,y2) shape -> 
+     in*)
+     let rc = List.fold shapes ~init:None ~f:(fun
+          rc shape -> 
                if Renderable.is_basic shape 
                then 
                     let mat = shape.Renderable.context in
-                    let (x3,y3) =  mat *|$ (-0.5,-0.5) in
-                    let (x4,y4) = mat *|$ (0.5,0.5) in
-                    let lx = min (min x1 x2) (min x3 x4) in
-                    let ly = min (min y1 y2) (min y3 y4) in
-                    let hx = max (max x1 x2) (max x3 x4) in
-                    let hy = max (max y1 y2) (max y3 y4) in
-                    (lx,ly, hx,hy)
+                    match rc with
+                    | None -> Some (Rect.expand_unit mat)
+                    | Some rc -> Some (Rect.expand rc (Rect.expand_unit mat))
                else
-                    (x1,y1,x2,y2))
+                    rc)
      in
-     let output = Outputtable.new_viewport output (x1,y1) (x2,y2) in
+     let rc = Option.value ~default:Rect.unit_rect rc in
+     let output = Outputtable.new_viewport output rc in
      let () =
           List.iter shapes 
           ~f:(fun t -> Renderable.render output t)
