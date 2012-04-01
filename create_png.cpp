@@ -26,8 +26,13 @@ void load_row(FILE *file, DATA32 *pData, int y)
 int main(int argc, char **argv)
 {
   char c;
+  if (argc < 2)
+  {
+       printf("Usage: create_png infile outfile\n");
+       return 1;
+  }
 
-  FILE *file = fopen("image.in", "r");
+  FILE *file = fopen(argv[1], "r");
   fscanf(file, "%d%c%d%c", &w, &c, &h, &c);
   printf("image:%d,%d\n", w, h);
   DATA32 *pData =(DATA32*) malloc(sizeof(DATA32) * h * w);
@@ -41,5 +46,5 @@ int main(int argc, char **argv)
   imlib_context_set_image(im);
 
   imlib_image_set_format("png");
-  imlib_save_image("out.png");
+  imlib_save_image(argv[2]);
 }

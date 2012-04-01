@@ -236,6 +236,15 @@ let test () =
      Vec.assert_equal v2 (20.,-35.)
      *)
 
+let fold_int_range ~init ~f lower upper = 
+     let acc = ref init in
+     for x = lower to (upper-1) do
+          acc := f (!acc) x
+     done;
+     !acc
+
+
+
 
 
 module Outputtable = struct
@@ -245,6 +254,7 @@ module Outputtable = struct
                pixelheight: int;
                base: Matrix.t;
                image: Pixel.t array;
+               alias_amt: int;
           }
 
      let set_pixel t (x,y) ~v =
@@ -298,15 +308,15 @@ module Outputtable = struct
           {t with base}
 
      let create ~pixelwidth ~pixelheight ?(alias=3) () =
+          assert (alias > 0);
           let pixelwidth  = pixelwidth*alias in
           let pixelheight  = pixelheight*alias in
           let base = 
                (Matrix.scale (float_of_int pixelwidth) (float_of_int pixelheight))
                *| (Matrix.translation (0.5) (0.5))
           in
-          printf "%d %d" pixelwidth pixelheight;
           let image = Array.create (pixelwidth*pixelheight) 0 in
-          { pixelwidth; pixelheight; base; image;}
+          { pixelwidth; pixelheight; base; image; alias_amt=alias;}
 
      let rec row_to_string ?(x=0) ~y t =
           if x >= t.pixelheight 
@@ -352,19 +362,20 @@ module Outputtable = struct
 
      let antialias t =
           let aliased =
-               create ~pixelwidth:(t.pixelwidth / 3) ~pixelheight:(t.pixelheight
-               / 3) ~alias:0 () 
+               create ~pixelwidth:(t.pixelwidth / t.alias_amt) ~pixelheight:(t.pixelheight
+               / t.alias_amt) ~alias:1 () 
           in
           for x = 0 to aliased.pixelwidth do
                for y = 0 to aliased.pixelheight do
                     let sum = 
-                         [0,0;1,0;2,0;0,1;1,1;2,1;0,2;1,2;2,2]
-                         |! List.fold ~init:0 ~f:(fun acc (ax,ay) ->
-                                   let ax = x * 3 + ax in
-                                   let ay = y * 3 + ay in
-                                   acc + t.image.(ay*t.pixelwidth+ax))
+                         fold_int_range 0 t.alias_amt ~init:0 ~f:(fun init ax ->
+                              fold_int_range 0 t.alias_amt ~init ~f:(fun acc ay ->
+                                   let ax = x * t.alias_amt + ax in
+                                   let ay = y * t.alias_amt + ay in
+                                   acc + t.image.(ay*t.pixelwidth+ax)))
                     in
-                    aliased.image.(y*aliased.pixelwidth+x) <- (sum / 9)
+                    aliased.image.(y*aliased.pixelwidth+x) <-
+                         (sum / t.alias_amt / t.alias_amt)
                done
           done;
           aliased
@@ -476,7 +487,7 @@ end
 
 let main () =
      printf "init\n";
-     let output = Outputtable.create ~pixelwidth:(700) ~pixelheight:(700) () in
+     let output = Outputtable.create ~pixelwidth:(700) ~pixelheight:(700) ~alias:3 () in
      let context = (Matrix.scale 0.75 0.75) *| (Matrix.translation 1. 1.) in
      let context2 = (Matrix.scale 0.3 0.75) *| (Matrix.translation (0.-. 5.) 1.) in
      let shapes = 
