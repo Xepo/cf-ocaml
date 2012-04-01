@@ -8,8 +8,10 @@ image.png: create_png image.in
 
 #-unsafe \
 
-main: main.ml
-	time ocamlfind ocamlopt \
+SOURCES=pixel.ml  vec.ml  matrix.ml  rect.ml  outputtable.ml  context.ml  basic_shape.ml  renderable.ml  scene.ml  s1.ml
+OBJECTS=$(SOURCES:.ml=.o)
+CMXES=$(SOURCES:.ml=.cmx)
+OPT=time ocamlfind ocamlopt \
 	-I /opt/local/lib/ocaml/site-lib/core \
 	/opt/local/lib/ocaml/site-lib/core/libcore.a \
 	-thread \
@@ -23,18 +25,14 @@ main: main.ml
 	-package "fieldslib.syntax" \
 	-package "comparelib.syntax" \
 	-package "core" \
-	-linkpkg \
-	-o main \
-	pixel.ml \
-	vec.ml \
-	matrix.ml \
-	rect.ml \
-	outputtable.ml \
-	context.ml \
-	basic_shape.ml \
-	renderable.ml \
-	scene.ml \
-	main.ml
+	-linkpkg
+
+
+%.o: %.ml
+	$(OPT) -c -o $@ $<
+
+main: $(OBJECTS)
+	$(OPT) -o main $(CMXES) 
 
 
 create_png: create_png.cpp
