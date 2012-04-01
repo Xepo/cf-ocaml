@@ -6,9 +6,10 @@ image.in: main
 image.png: create_png image.in
 	./create_png image.in image.png
 
+#-unsafe \
+
 main: main.ml
-	ocamlfind ocamlopt \
-	-unsafe \
+	time ocamlfind ocamlopt \
 	-I /opt/local/lib/ocaml/site-lib/core \
 	/opt/local/lib/ocaml/site-lib/core/libcore.a \
 	-thread \

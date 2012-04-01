@@ -300,7 +300,7 @@ module Outputtable = struct
 
      let set_pixel t (x,y) ~v =
           let loc = y * t.pixelwidth + x in
-          if x > t.pixelwidth || x < 0 || y > t.pixelheight || y < 0 then
+          if x >= t.pixelwidth || x < 0 || y >= t.pixelheight || y < 0 then
                raise Invalid_pixel
           else
           t.image.(loc) <- v
@@ -325,8 +325,8 @@ module Outputtable = struct
           let y2 = int_of_float (y2+.1.) in
           let x1 = max x1 0 in
           let y1 = max y1 0 in
-          let x2 = min x2 t.pixelwidth in
-          let y2 = min y2 t.pixelheight in
+          let x2 = min x2 (t.pixelwidth-1) in
+          let y2 = min y2 (t.pixelheight-1) in
           let ibase = Matrix.invert t.base in
           for x = x1 to x2
           do
@@ -434,8 +434,8 @@ module Outputtable = struct
                create ~pixelwidth:(t.pixelwidth / t.alias_amt) ~pixelheight:(t.pixelheight
                / t.alias_amt) ~alias:1 () 
           in
-          for x = 0 to aliased.pixelwidth do
-               for y = 0 to aliased.pixelheight do
+          for x = 0 to aliased.pixelwidth-1 do
+               for y = 0 to aliased.pixelheight-1 do
                     let sum = 
                          fold_int_range 0 t.alias_amt ~init:0 ~f:(fun init ax ->
                               fold_int_range 0 t.alias_amt ~init ~f:(fun acc ay ->
@@ -473,6 +473,11 @@ module Context = struct
                else
                     None
           )
+
+     let size t =
+          let (cxx,cxy,_) = (Matrix.row t `i1) in
+          let (cyx,cyy,_) = (Matrix.row t `i2) in
+          min (cxx +. cxy) (cyx +. cyy)
 end
 
 module Basic_shape = struct
@@ -553,12 +558,40 @@ module Renderable = struct
           match t.shape with
           | Shapes.Basic _ -> true
           | _ -> false
+
+     let to_string t = 
+          match t.shape with
+          | Shapes.Basic b -> 
+                    sprintf "basic(%s:%d:%s)" 
+                    (Basic_shape.to_string b) 
+                    t.value
+                    (Matrix.to_string t.context) 
+          | Shapes.Fcn _ -> "f"
 end
 
 module Scene = struct
+     module Settings = struct
+          type settings = 
+               { value: int option; transform: Matrix.t; }
+          let of_matrix m = {value=None; transform=m}
+          let of_value v = {value=Some v; transform=Matrix.identity}
 
-     let apply_value v r = {r with Renderable.value=v}
-     let apply_context c r = Renderable.apply_context r c
+          let translate x y = of_matrix (Matrix.translate x y)
+          let scale x y = of_matrix (Matrix.scale x y)
+          let rotate d = of_matrix (Matrix.rotate d)
+          let value = of_value
+
+          let combine t1 t2 =
+               {value=t2.value; transform=t1.transform*|t2.transform;}
+          let apply t r =
+               let r = Renderable.apply_context r t.transform in
+               {r with 
+               Renderable.value=Option.value ~default:r.Renderable.value t.value
+               }
+     end
+
+     let apply_to_list settings =
+          List.map ~f:(Settings.apply settings)
 
      let shape ?(trace="") f = 
           [Renderable.of_fcn ~trace Matrix.identity f]
@@ -570,33 +603,71 @@ module Scene = struct
      let add_trace trace s =
           Renderable.add_trace trace s
 
-
-
-     let apply_list lr f = 
-          List.map lr ~f
-
-     let ( + ) f tr = apply_list f tr
+     let ( + ) r settings = apply_to_list settings r
      let ( ++ ) f1 f2 = f1 @ f2
 
-     let tr x y = apply_context (Matrix.translate x y)
-     let sc x y = apply_context (Matrix.scale x y)
-     let rot d = apply_context (Matrix.rotate d)
-     let v v = apply_value v 
+     let tr = Settings.translate
+     let sc = Settings.scale
+     let rot = Settings.rotate
+     let v = Settings.value
 
-     let rec f () =
-          square + (v 9)
-          ++ shape f + (rot 1.)+ (tr (0.01) (0.01)) + (sc 0.98 0.98)
 
+     let rec many n t s =
+          let rec many n thist s () = 
+               if n > 0
+               then 
+                    (s + thist) ++
+                    many (n-1) (Settings.combine t thist) s ()
+               else
+                    []
+          in
+          shape (many n t s)
+
+     let choose l = 
+          let total = 
+               List.fold l ~init:(0.0) ~f:(fun acc (prob, _) -> acc +. prob)
+          in
+          fun () ->
+               let c = Random.float total in
+               let (_, r) = 
+               List.fold l ~init:(c, None)
+               ~f:(fun (c, chosen) (p, r) ->
+                    if c >= 0. then
+                         (c -. p, Some r)
+                    else
+                         (0.0, chosen))
+               in
+               Option.value ~default:[] r
+
+
+
+
+     let rec line_right () =
+          let c = choose 
+               [ 
+                    0.1, shape line_right + (sc 0.999 0.999) + (tr (0.5) 0.)
+                    + (rot 4.);
+                    0.1, shape line_right +  (sc 0.999 0.999) + (tr (0.5) 0.)  + (rot (-.4.));
+               ]
+          in
+          square + (v 9) + (sc 1. 0.4)
+          ++ shape c
+
+     let rec line_down () =
+          many 20 (tr 0. 3.) ((shape line_right) + (v 9))
+
+     let f = line_down
 end
 
 
 
-let rec repeat ~f x n =
-     if n > 0 
-     then
-          repeat ~f (f x) (n-1)
-     else
-          x
+let repeat ~f x n =
+     let rec ret = ref x in
+     for i = 0 to (n-1)
+     do
+          ret := f (!ret)
+     done;
+     !ret
 
      
 let split_fcns_basics =
@@ -605,24 +676,41 @@ let split_fcns_basics =
           | Renderable.Shapes.Basic _ -> ((s :: basics), fcns)
           | Renderable.Shapes.Fcn _ -> (basics, (s :: fcns)))
 
+let expand_list (basics, fcns) =
+     printf "expanding: %d %d\n" (List.length basics) (List.length fcns);
+     let (b,f) = 
+          split_fcns_basics 
+               (List.concat (List.map fcns ~f:Renderable.expand) )
+     in
+     (b @ basics, f)
+
+let rec expand_until (basics, fcns) = 
+     printf "expanding: %d %d\n" (List.length basics) (List.length fcns);
+     let fcns = List.filter fcns 
+          ~f:(fun x -> 0.001 <= Context.size x.Renderable.context) 
+     in
+     let (b,f) = 
+          split_fcns_basics 
+               (List.concat (List.map fcns ~f:Renderable.expand) )
+     in
+     let ret = b @ basics, f in
+     match f with
+     | [] -> ret
+     | _ -> expand_until ret
+     
 
 
 let main () =
      printf "init\n";
-     let output = Outputtable.create ~pixelwidth:(700) ~pixelheight:(700) ~alias:3 () in
-     let ex (basics, fcns) =
-          let (b,f) = split_fcns_basics 
-           (List.concat (List.map fcns ~f:Renderable.expand) )
-          in
-          (b @ basics, f @ fcns)
+     Random.self_init ();
+     let output = Outputtable.create ~pixelwidth:(700) ~pixelheight:(700) ~alias:5 ()
      in
      let shapes = Scene.f () in
-     let (basics,fcns) = repeat ~f:ex  ([], shapes) 20 in
-     let shapes = basics @ fcns in
-     List.iter shapes ~f:(fun x -> printf "shape:%s\n" x.Renderable.trace);
-
-     let rc = List.fold shapes ~init:None ~f:(fun
-          rc shape -> 
+     (*let (basics,_) = repeat ~f:expand_until ([], shapes) 200 in*)
+     let (basics,_) = expand_until ([], shapes) in
+     let shapes = basics in
+     let rc = List.fold shapes ~init:None 
+          ~f:(fun rc shape -> 
                if Renderable.is_basic shape 
                then 
                     let mat = shape.Renderable.context in
@@ -634,6 +722,8 @@ let main () =
      in
      let rc = Option.value ~default:Rect.unit_rect rc in
      let output = Outputtable.new_viewport output rc in
+     List.iter shapes ~f:(fun r ->
+          printf "%s\n" (Renderable.to_string r));
      let () =
           List.iter shapes 
           ~f:(fun t -> Renderable.render output t)
