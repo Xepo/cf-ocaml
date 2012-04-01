@@ -25,6 +25,15 @@ main: main.ml
 	-package "core" \
 	-linkpkg \
 	-o main \
+	pixel.ml \
+	vec.ml \
+	matrix.ml \
+	rect.ml \
+	outputtable.ml \
+	context.ml \
+	basic_shape.ml \
+	renderable.ml \
+	scene.ml \
 	main.ml
 
 
