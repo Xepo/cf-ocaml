@@ -15,6 +15,7 @@ type t =
      {
           pixelwidth: int;
           pixelheight: int;
+          pixelborder: int;
           base: Matrix.t;
           image: Pixel.t array;
           alias_amt: int;
@@ -82,17 +83,18 @@ let new_viewport t ((x1,y1),(x2,y2)) =
      let viewport_width = max (ratio *. viewport_height) viewport_width in
      let viewport_height = max (viewport_width /. ratio) viewport_height in
      (*Gotta keep same ratio as pixels*)
-     let borderx = 50. /. viewport_width in
-     let bordery = 50. /. viewport_height in
+     let border = t.pixelborder * t.alias_amt in
+     let borderx = (float_of_int border) /. viewport_width in
+     let bordery = (float_of_int border) /. viewport_height in
      let base = 
           Matrix.scale 
-               ((float_of_int (t.pixelwidth - 50)) /. viewport_width) 
-               ((float_of_int (t.pixelheight - 50)) /. viewport_height)
+               ((float_of_int (t.pixelwidth - border)) /. viewport_width) 
+               ((float_of_int (t.pixelheight - border)) /. viewport_height)
           *| Matrix.translate (borderx -. x1) (bordery -. y1)
      in
      {t with base}
 
-let create ~pixelwidth ~pixelheight ?(bg=0) ?(alias=3) () =
+let create ~pixelwidth ~pixelheight ~pixelborder ?(bg=0) ?(alias=3) () =
      assert (alias > 0);
      let pixelwidth  = pixelwidth*alias in
      let pixelheight  = pixelheight*alias in
@@ -101,7 +103,7 @@ let create ~pixelwidth ~pixelheight ?(bg=0) ?(alias=3) () =
           *| (Matrix.translate (0.5) (0.5))
      in
      let image = Array.create (pixelwidth*pixelheight) bg in
-     { pixelwidth; pixelheight; base; image; alias_amt=alias;}
+     { pixelwidth; pixelheight; base; image; alias_amt=alias; pixelborder}
 
 let rec row_to_string ?(x=0) ~y t =
      if x >= t.pixelheight 
@@ -144,7 +146,7 @@ let write t filename =
 let antialias t =
      let aliased =
           create ~pixelwidth:(t.pixelwidth / t.alias_amt) ~pixelheight:(t.pixelheight
-          / t.alias_amt) ~alias:1 () 
+          / t.alias_amt) ~alias:1 ~pixelborder:t.pixelborder () 
      in
      for x = 0 to aliased.pixelwidth-1 do
           for y = 0 to aliased.pixelheight-1 do

@@ -63,7 +63,7 @@ let render_scene ~w:pixelwidth ~h:pixelheight ?(alias=5) ?bg ~filename s =
      (*TODO:Should use after alias w and h*)
      let world = World.add_list World.empty (s ()) in
      let world = World.expand_until_size ~pixelwidth ~pixelheight world in
-     let output = Outputtable.create ~pixelwidth ~pixelheight ~alias ?bg () in
+     let output = Outputtable.create ~pixelwidth ~pixelheight ~alias ~pixelborder:15 ?bg () in
      let extents = Option.value_exn world.World.extents in
      let output = Outputtable.new_viewport output extents in
      render_shapes output world.World.basics;
