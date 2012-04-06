@@ -1,7 +1,8 @@
 open Core.Std
+open Vec.Infix
+open Matrix.Infix
 
 type t = Vec.t * Vec.t
-let ( *|$ ) = Matrix.( *|$ )
 
 let normalize ((x1,y1),(x2,y2)) =
      (((min x1 x2), (min y1 y2)), ((max x1 x2), (max y1 y2)))

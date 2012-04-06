@@ -1,4 +1,6 @@
 open Core.Std
+open Vec.Infix
+open Matrix.Infix
 
 module Shapes = struct
      type 'a t = 
@@ -6,10 +8,6 @@ module Shapes = struct
      | Fcn of (unit -> 'a list)
 end
 
-let (=$) = Vec.(=$)
-let ( *|$ ) = Matrix.( *|$ )
-let ( *| ) = Matrix.( *|)
-let ( =| ) = Matrix.( =|)
 
 type t = 
      {

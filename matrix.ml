@@ -65,20 +65,6 @@ let set ~l ~v m =
 let col m j = (get_i m `i1 j, get_i m `i2 j, get_i m `i3 j)
 let row = t3_get
 
-let ( *|$ ) m (x,y) : Vec.t = 
-     let f (c1,c2,c3) = x *. c1 +. y *. c2 +. c3 in
-     (f (row m `i1), f (row m `i2))
-
-let ( *| ) m1 m2 =
-     let row_col i j = 
-          List.fold [`i1;`i2;`i3;] ~init:0.0 ~f:(fun acc x ->
-               acc +. (get_i m1 i x)  *. (get_i m2 x j))
-     in
-     create
-     ((row_col `i1 `i1),(row_col `i1 `i2), row_col `i1 `i3)
-     ((row_col `i2 `i1),(row_col `i2 `i2), row_col `i2 `i3)
-     ((row_col `i3 `i1),(row_col `i3 `i2), row_col `i3 `i3)
-
 let map m ~f =
      let z l m = set m ~l ~v:(f (l_to_i l) (get m ~l)) in
      z `l11 m
@@ -92,6 +78,7 @@ let map m ~f =
      |! z `l33
 
 
+
 let cross (i1,i2,i3) (j1,j2,j3) =
      (
           (i2*.j3 -. i3*.j2),
@@ -101,8 +88,27 @@ let cross (i1,i2,i3) (j1,j2,j3) =
 
 let dot (i1,i2,i3) (j1,j2,j3) = (i1*.j1) +. (i2*.j2) +. (i3*.j3)
 
-let ( =| ) m1 m2 = m1 = m2
-let ( *|. ) s m1 = map m1 ~f:(fun _ old -> old *. s)
+module Infix = struct
+     let ( *|$ ) m (x,y) : Vec.t = 
+          let f (c1,c2,c3) = x *. c1 +. y *. c2 +. c3 in
+          (f (row m `i1), f (row m `i2))
+
+     let ( *| ) m1 m2 =
+          let row_col i j = 
+               List.fold [`i1;`i2;`i3;] ~init:0.0 ~f:(fun acc x ->
+                    acc +. (get_i m1 i x)  *. (get_i m2 x j))
+          in
+          create
+          ((row_col `i1 `i1),(row_col `i1 `i2), row_col `i1 `i3)
+          ((row_col `i2 `i1),(row_col `i2 `i2), row_col `i2 `i3)
+          ((row_col `i3 `i1),(row_col `i3 `i2), row_col `i3 `i3)
+
+     let ( =| ) m1 m2 = m1 = m2
+
+     let ( *|. ) s m1 = map m1 ~f:(fun _ old -> old *. s)
+end
+include Infix
+
 
 
 let det m = 

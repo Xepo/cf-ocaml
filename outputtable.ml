@@ -1,4 +1,6 @@
 open Core.Std
+open Vec.Infix
+open Matrix.Infix
 
 let fold_int_range ~init ~f lower upper = 
      let acc = ref init in
@@ -8,10 +10,6 @@ let fold_int_range ~init ~f lower upper =
      !acc
 
 
-let (=$) = Vec.(=$)
-let ( *|$ ) = Matrix.( *|$ )
-let ( *| ) = Matrix.( *|)
-let ( =| ) = Matrix.( =|)
 let t2_order x1 x2 = if x1 <. x2 then (x1,x2) else (x2,x1)
 type t = 
      {

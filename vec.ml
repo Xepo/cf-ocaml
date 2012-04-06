@@ -18,7 +18,10 @@ let unitvec = (1.0,1.0)
 
 let in_unit = in_square (-0.5, -0.5) (0.5, 0.5)
 
-let ( =$ ) ((x1,y1):t) ((x2,y2):t) : bool= ((Float.(=) x1 x2) && (Float.(=) y1 y2))
+module Infix = struct
+     let ( =$ ) ((x1,y1):t) ((x2,y2):t) : bool= ((Float.(=) x1 x2) && (Float.(=) y1 y2))
+end
+include Infix
 
 let to_string (x,y) = sprintf "(%f,%f)" x y
 

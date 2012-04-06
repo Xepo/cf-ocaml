@@ -1,5 +1,8 @@
+open Core.Std
+open Vec.Infix
+open Matrix.Infix
 
-let test () =
+let _ =
      assert (Vec.in_unit (0.4,0.4));
      assert (not (Vec.in_unit (50.4,0.4)));
      assert (not (Vec.in_unit (0.4,50.4)))
@@ -7,7 +10,7 @@ let test () =
 
 
 
-let test () = 
+let _ = 
      let v:Vec.t = (5.0,5.0) in
      let m = Matrix.identity in
      let r:Vec.t = m *|$ v in
@@ -49,7 +52,7 @@ let test () =
 
 
 
-let test () = 
+let _ = 
      let output = Outputtable.create ~pixelwidth:20 ~pixelheight:20 () in
      let output = Outputtable.new_viewport output (((-5.),(-5.)),(5.,5.)) in
      let (x1,y1) = (Outputtable.pixel_to_space output (0,0)) in

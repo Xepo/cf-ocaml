@@ -1,15 +1,14 @@
-SOURCES=pixel.ml  vec.ml  matrix.ml  rect.ml  outputtable.ml  context.ml  basic_shape.ml  renderable.ml  scene.ml  s1.ml scene.mli
-OBJECTS=$(SOURCES:.ml=.o)
-CMXES=$(SOURCES:.ml=.cmx)
+SOURCES=pixel.ml vec.ml matrix.ml rect.ml outputtable.ml context.ml basic_shape.ml renderable.ml scene.ml scene.mli
+TESTSOURCES=$(SOURCES) test.ml
+MAINSOURCES=$(SOURCES) s1.ml
+ALLSOURCES=$(SOURCES) test.ml s1.ml
 
 all: Makefile.fragment image.png
 
-Makefile.fragment:
-	ocamldep $(SOURCES) > $@
+Makefile.fragment: $(ALLSOURCES)
+	ocamldep $(ALLSOURCES) > $@
 
 include Makefile.fragment
-
-
 
 redo:
 	./main 
@@ -40,13 +39,16 @@ OPT=time ocamlfind ocamlopt \
 	-linkpkg
 
 %.cmi: %.mli %.ml
-	$(OPT) -c -o $@ $^
+	$(OPT) -c -o $@ $<
 
 %.cmx: %.ml
 	$(OPT) -c -o $@ $<
 
-main: $(CMXES)
-	$(OPT) -o main $(CMXES) 
+main: $(MAINSOURCES:.ml=.cmx)
+	$(OPT) -o $@ $^
+
+test: $(TESTSOURCES:.ml=.cmx)
+	$(OPT) -o $@ $^
 
 clean:
 	rm -f *.cmo *.cmi *.cmx *.o image.in image.png

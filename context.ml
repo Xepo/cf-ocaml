@@ -1,10 +1,7 @@
+open Vec.Infix
+open Matrix.Infix
+
 type t = Matrix.t
-
-let (=$) = Vec.(=$)
-let ( *|$ ) = Matrix.( *|$ )
-let ( *| ) = Matrix.( *|)
-let ( =| ) = Matrix.( =|)
-
 let iterate_unit ~f output t = 
      let rc = Rect.expand_unit t in
      let it = Matrix.invert t in
