@@ -1,16 +1,27 @@
-all: image.png
+SOURCES=pixel.ml  vec.ml  matrix.ml  rect.ml  outputtable.ml  context.ml  basic_shape.ml  renderable.ml  scene.ml  s1.ml scene.mli
+OBJECTS=$(SOURCES:.ml=.o)
+CMXES=$(SOURCES:.ml=.cmx)
 
-image.in: main
-	./main
+all: Makefile.fragment image.png
 
-image.png: create_png image.in
+Makefile.fragment:
+	ocamldep $(SOURCES) > $@
+
+include Makefile.fragment
+
+
+
+redo:
+	./main 
+	./create_png image.in image.png
+	
+
+image.png: main
+	./main 
 	./create_png image.in image.png
 
 #-unsafe \
 
-SOURCES=pixel.ml  vec.ml  matrix.ml  rect.ml  outputtable.ml  context.ml  basic_shape.ml  renderable.ml  scene.ml  s1.ml
-OBJECTS=$(SOURCES:.ml=.o)
-CMXES=$(SOURCES:.ml=.cmx)
 OPT=time ocamlfind ocamlopt \
 	-I /opt/local/lib/ocaml/site-lib/core \
 	/opt/local/lib/ocaml/site-lib/core/libcore.a \
@@ -27,13 +38,17 @@ OPT=time ocamlfind ocamlopt \
 	-package "core" \
 	-linkpkg
 
+%.cmi: %.mli %.ml
+	$(OPT) -c -o $@ $^
 
-%.o: %.ml
+%.cmx: %.ml
 	$(OPT) -c -o $@ $<
 
-main: $(OBJECTS)
+main: $(CMXES)
 	$(OPT) -o main $(CMXES) 
 
+clean:
+	rm -f *.cmo *.cmi *.cmx *.o image.in image.png
 
 create_png: create_png.cpp
-	g++ -O3 create_png.cpp -o create_png `imlib2-config --libs` `imlib2-config --cflags`
+	g++ -g create_png.cpp -o create_png `imlib2-config --libs` `imlib2-config --cflags`
