@@ -28,8 +28,11 @@ let unit_rect = ((-0.5,-0.5), (0.5,0.5))
 let normalize ((x1,y1),(x2,y2)) =
      (((min x1 x2), (min y1 y2)), ((max x1 x2), (max y1 y2)))
 
-let expand_unit t =
-     expand_and_apply t unit_rect ((-.0.5, 0.5),(0.5,-.0.5))
+let containing_rect ((x1,y1),(x2,y2)) t =
+     expand_and_apply t ((x1,y1),(x2,y2)) ((x1,y2),(x2,y1))
+
+let containing_rect_of_unit t =
+     containing_rect unit_rect t
 
 let pt_in_rect r (x,y) = 
      let ((x1,y1),(x2,y2)) = normalize r in

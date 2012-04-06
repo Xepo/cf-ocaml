@@ -11,19 +11,22 @@ end
 
 type t = 
      {
-          value : Pixel.t;
-          context : Context.t;
+          settings : Settings.t;
           shape : t Shapes.t;
           trace : string;
      }
 
-let apply_context t context = 
-     { t with context = context *| t.context; }
-let apply_context_rev t context = 
-     { t with context = t.context *| context; }
+let apply_matrix t = 
+     Settings.apply_matrix t.settings
+let apply_matrix_rev t = 
+     Settings.apply_matrix_rev t.settings
+
+let apply_settings t1 settings =
+     {t1 with settings=Settings.combine t1.settings settings}
 
 let add_trace str = 
      List.map ~f:(fun r -> {r with trace=str ^ "(" ^ r.trace ^ ")"})
+
 let rec expand t = 
      match t.shape with
      | Shapes.Basic _ -> [t]
@@ -32,7 +35,7 @@ let rec expand t =
           (
                List.fold (f ()) ~init:[] 
                     ~f:(fun acc new_t ->
-                         let new_t = apply_context new_t t.context in
+                         let new_t = apply_settings new_t t.settings in
                          new_t :: acc)
           )
 
@@ -41,18 +44,18 @@ let rec render output t =
      match t.shape with
      | Shapes.Basic basic ->
                begin try
-                    (Basic_shape.render ~v:t.value output t.context basic)
+                    (Basic_shape.render output t.settings basic)
                with
                     | Outputtable.Found_pixel -> printf "!!!!found_pixel:%s %s\n" t.trace
-                    (Matrix.to_string t.context)
+                    (Settings.to_string t.settings)
                end
      | Shapes.Fcn f -> ()
 
-let create_basic ~v context shape =
-     { value=v; context; shape=Shapes.Basic shape;
+let create_basic settings shape =
+     { settings; shape=Shapes.Basic shape;
      trace=Basic_shape.to_string shape}
-let of_fcn ~trace context fcn =
-     { value=0; context; shape=Shapes.Fcn fcn; trace}
+let of_fcn ~trace settings fcn =
+     { settings; shape=Shapes.Fcn fcn; trace}
 let is_basic t =
      match t.shape with
      | Shapes.Basic _ -> true
@@ -61,8 +64,7 @@ let is_basic t =
 let to_string t = 
      match t.shape with
      | Shapes.Basic b -> 
-               sprintf "basic(%s:%d:%s)" 
+               sprintf "basic(%s:%s)" 
                (Basic_shape.to_string b) 
-               t.value
-               (Matrix.to_string t.context) 
+               (Settings.to_string t.settings) 
      | Shapes.Fcn _ -> "f"

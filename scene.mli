@@ -1,9 +1,6 @@
 open Core.Std
 open Vec.Infix
 open Matrix.Infix
-module Settings : sig
-     type t
-end
 
 val (+|) : Settings.t -> Settings.t -> Settings.t
 
@@ -15,7 +12,6 @@ val shape : ?trace:string -> (unit -> Renderable.t list) -> Renderable.t list
 
 val add_trace : string -> Renderable.t list -> Renderable.t list
 
-val ( *+ ) : Renderable.t list -> Settings.t -> Renderable.t list
 val ( *- ) : Renderable.t list -> Settings.t -> Renderable.t list
 val ( ++ ) : Renderable.t list -> Renderable.t list -> Renderable.t list
 
