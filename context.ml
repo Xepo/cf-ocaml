@@ -20,4 +20,5 @@ let iterate_unit ~f output t =
 let size t =
      let (cxx,cxy,_) = (Matrix.row t `i1) in
      let (cyx,cyy,_) = (Matrix.row t `i2) in
-     min (cxx +. cxy) (cyx +. cyy)
+     let ( !! ) f = if f > 0.0 then f else 0. -. f in
+     min ((!!cxx) +. (!!cxy)) ((!!cyx) +. (!!cyy))

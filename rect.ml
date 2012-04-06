@@ -33,3 +33,6 @@ let expand_unit t =
 let pt_in_rect r (x,y) = 
      let ((x1,y1),(x2,y2)) = normalize r in
      ((x1 <= x) && (x <= x2)) && ((y1 <= y) && (y <= y2))
+
+let width ((x1,_),(x2,_)) = x2 -. x1
+let height ((_,y1),(_,y2)) = y2 -. y1

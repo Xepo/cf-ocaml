@@ -15,9 +15,10 @@ redo:
 	./main 
 	./create_png image.in image.png
 	
+image.in: main
+	./main
 
-image.png: main
-	./main 
+image.png: image.in create_png
 	./create_png image.in image.png
 
 #-unsafe \

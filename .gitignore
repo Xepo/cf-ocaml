@@ -1,0 +1,11 @@
+Makefile.fragment
+a.out
+*.cmx
+*.cmi
+*.o
+create_png
+image.in
+image.png
+lib
+main
+z
