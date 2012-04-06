@@ -5,18 +5,8 @@ open Matrix.Infix
 let apply settings r =
      Renderable.apply_settings r settings
 
-     (*
-let apply_rev t r =
-     Renderable.apply_settings_rev r settings
-     *)
-
 let apply_to_list settings =
      List.map ~f:(apply settings)
-
-     (*
-let apply_to_list_rev settings =
-     List.map ~f:(apply_rev settings)
-     *)
 
 module Operations = struct
      let shape ?(trace="") f = 
@@ -68,7 +58,7 @@ let print_shapes =
 
 let render_shapes output = (List.iter ~f:(fun t -> Renderable.render output t))
 
-let render_scene ~w:pixelwidth ~h:pixelheight ?(alias=5) ?bg s =
+let render_scene ~w:pixelwidth ~h:pixelheight ?(alias=5) ?bg ~filename s =
      Random.self_init ();
      (*TODO:Should use after alias w and h*)
      let world = World.add_list World.empty (s ()) in
@@ -80,7 +70,7 @@ let render_scene ~w:pixelwidth ~h:pixelheight ?(alias=5) ?bg s =
      printf "%s\n" (Outputtable.string_of_viewport output);
 
      let aliased = Outputtable.antialias output in
-     Outputtable.write_arr aliased "image.in";
+     Outputtable.write aliased filename;
      printf "Done rendering %d shapes\n" (world.World.basic_count)
 
 include Settings.Operations

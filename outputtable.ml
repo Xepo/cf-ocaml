@@ -82,11 +82,13 @@ let new_viewport t ((x1,y1),(x2,y2)) =
      let viewport_width = max (ratio *. viewport_height) viewport_width in
      let viewport_height = max (viewport_width /. ratio) viewport_height in
      (*Gotta keep same ratio as pixels*)
+     let borderx = 50. /. viewport_width in
+     let bordery = 50. /. viewport_height in
      let base = 
           Matrix.scale 
-               ((float_of_int t.pixelwidth) /. viewport_width) 
-               ((float_of_int t.pixelheight) /. viewport_height)
-          *| Matrix.translate (0. -. x1) (0. -. y1)
+               ((float_of_int (t.pixelwidth - 50)) /. viewport_width) 
+               ((float_of_int (t.pixelheight - 50)) /. viewport_height)
+          *| Matrix.translate (borderx -. x1) (bordery -. y1)
      in
      {t with base}
 
@@ -132,26 +134,11 @@ let to_string t =
 
 
 
-let write_arr t filename =
+let write t filename =
      let chan = open_out filename in
      fprintf chan "%d,%d\n" t.pixelwidth t.pixelheight;
      Array.iteri t.image ~f:(fun i x ->
           fprintf chan "%d" x)
-
-let write t filename =
-     let chan = open_out filename in
-     fprintf chan "%d,%d\n" t.pixelwidth t.pixelheight;
-     for x = 0 to (t.pixelwidth-1)
-     do
-          for y = 0 to (t.pixelheight-1)
-          do
-               let pixel = t.image.(t.pixelwidth*y+x) in
-               if x < 50 && pixel > 0 then
-                    printf "PT:%d\n" pixel;
-               fprintf chan "%d" pixel
-          done;
-          fprintf chan "\n"
-     done
 
 
 let antialias t =

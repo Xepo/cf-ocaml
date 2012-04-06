@@ -31,9 +31,16 @@ let of_value v =
           transform=Matrix.identity;
      }
 
+let add_value i1 i2 = 
+     match i1,i2 with
+     | None,None -> None
+     | Some x,Some y -> Some (x + y)
+     | Some x,_
+     | _,Some x -> Some x
+
 let combine t1 t2 =
      {
-          value=t2.value;
+          value=add_value t1.value t2.value;
           transform=t2.transform*|t1.transform;
      }
 

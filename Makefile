@@ -1,4 +1,4 @@
-SOURCES=pixel.ml vec.ml matrix.ml rect.ml outputtable.ml settings.ml context.ml basic_shape.ml renderable.ml world.ml scene.ml scene.mli 
+SOURCES=pixel.ml vec.ml matrix.ml rect.ml outputtable.ml settings.ml basic_shape.ml renderable.ml world.ml scene.ml scene.mli 
 TESTSOURCES=$(SOURCES) test.ml
 MAINSOURCES=$(SOURCES) s1.ml
 ALLSOURCES=$(SOURCES) test.ml s1.ml

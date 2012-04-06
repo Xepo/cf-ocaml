@@ -70,4 +70,4 @@ let t2 () =
      many 5 (tra ~s:0.5 ~rot:11. ()) (shape m)
 
      (*TODO: *- v 9 on surround isn't working*)
-let _ = Scene.render_scene ~w:700 ~h:700 ~alias:3 ~bg:9 t2
+let _ = Scene.render_scene ~w:700 ~h:700 ~alias:9 ~bg:9 ~filename:"image.in" t2
