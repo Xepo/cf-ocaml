@@ -1,3 +1,4 @@
+/*Was too lazy to get ocaml to write a png.  So it outputs an intermediate file and this creates a png from it*/
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
