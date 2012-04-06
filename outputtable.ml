@@ -90,7 +90,7 @@ let new_viewport t ((x1,y1),(x2,y2)) =
      in
      {t with base}
 
-let create ~pixelwidth ~pixelheight ?(alias=3) () =
+let create ~pixelwidth ~pixelheight ?(bg=0) ?(alias=3) () =
      assert (alias > 0);
      let pixelwidth  = pixelwidth*alias in
      let pixelheight  = pixelheight*alias in
@@ -98,7 +98,7 @@ let create ~pixelwidth ~pixelheight ?(alias=3) () =
           (Matrix.scale (float_of_int pixelwidth) (float_of_int pixelheight))
           *| (Matrix.translate (0.5) (0.5))
      in
-     let image = Array.create (pixelwidth*pixelheight) 0 in
+     let image = Array.create (pixelwidth*pixelheight) bg in
      { pixelwidth; pixelheight; base; image; alias_amt=alias;}
 
 let rec row_to_string ?(x=0) ~y t =

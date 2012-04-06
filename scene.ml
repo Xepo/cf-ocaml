@@ -53,12 +53,47 @@ let tr = Settings.translate
 let sc = Settings.scale
 let rot = Settings.rotate
 let v = Settings.value
-let tra ?(x=0.0) ?(y=0.0) ?(w=1.0) ?(h=1.0) ?(rot=0.0) () =
+let tra ?(x=0.0) ?(y=0.0) ?s ?w ?h ?(rot=0.0) () =
+     let w,h =
+          match s,w,h with
+          | Some _, _, Some _ 
+          | Some _, Some _, _
+               -> failwith "Cannot apply tra with both s and w,h\n"
+          | Some s, _, _ -> s,s
+          | None, _, _ -> Option.value ~default:1.0 w, Option.value ~default:1.0 h
+     in
      Settings.of_matrix
      (Matrix.translate x y
      *| Matrix.rotate rot
      *| Matrix.scale w h)
 
+
+let rec many n t s =
+     let rec many n thist s () = 
+          if n > 0
+          then 
+               (s *- thist) ++
+               many (n-1) (Settings.combine thist t) s ()
+          else
+               []
+     in
+     shape (many n t s)
+
+let choose l = 
+     let total = 
+          List.fold l ~init:(0.0) ~f:(fun acc (prob, _) -> acc +. prob)
+     in
+     fun () ->
+          let c = Random.float total in
+          let (_, r) = 
+          List.fold l ~init:(c, None)
+          ~f:(fun (c, chosen) (p, r) ->
+               if c >= 0. then
+                    (c -. p, Some r)
+               else
+                    (-1.0, chosen))
+          in
+          Option.value ~default:[] r
 
 
 
@@ -125,42 +160,6 @@ module World = struct
           ({t with fcns}, ret)
 end
 
-let rec many n t s =
-     let rec many n thist s () = 
-          if n > 0
-          then 
-               (s *- thist) ++
-               many (n-1) (Settings.combine thist t) s ()
-          else
-               []
-     in
-     shape (many n t s)
-
-let choose l = 
-     let total = 
-          List.fold l ~init:(0.0) ~f:(fun acc (prob, _) -> acc +. prob)
-     in
-     fun () ->
-          let c = Random.float total in
-          let (_, r) = 
-          List.fold l ~init:(c, None)
-          ~f:(fun (c, chosen) (p, r) ->
-               if c >= 0. then
-                    (c -. p, Some r)
-               else
-                    (-1.0, chosen))
-          in
-          Option.value ~default:[] r
-
-
-
-     
-let split_fcns_basics =
-     List.fold ~init:([],[]) ~f:(fun (basics, fcns) s ->
-          if Renderable.is_basic s 
-          then ((s :: basics), fcns)
-          else (basics, (s :: fcns)))
-
 let calculate_threshold ~pixelwidth ~pixelheight world = 
      let extents = Option.value_exn world.World.extents in
      min 
@@ -193,20 +192,7 @@ let rec expand_until_size ~pixelwidth ~pixelheight world =
                          in
                          recurs ~size_threshold (rec_amt - 1) world
      in
-     recurs ~size_threshold:100000.0 100000000 world
-
-
-     (*
-let expand_until ~pixelwidth ~pixelheight world =
-     let rec recurs ~size_threshold world =
-          let world = expand_until_size ~size_threshold world in
-          let new_threshold = calculate_threshold ~pixelwidth ~pixelheight world in
-          if new_threshold <. size_threshold
-          then recurs ~size_threshold:new_threshold world
-          else world
-     in
-     recurs ~size_threshold:100000.0 world
-     *)
+     recurs ~size_threshold:100000.0 20000 world
 
 let print_shapes = 
      List.iter ~f:(fun r ->
@@ -214,12 +200,12 @@ let print_shapes =
 
 let render_shapes output = (List.iter ~f:(fun t -> Renderable.render output t))
 
-let render_scene ~w:pixelwidth ~h:pixelheight ?(alias=5) s =
+let render_scene ~w:pixelwidth ~h:pixelheight ?(alias=5) ?bg s =
      Random.self_init ();
      (*TODO:Should use after alias w and h*)
      let world = World.add_list World.empty (s ()) in
      let world = expand_until_size ~pixelwidth ~pixelheight world in
-     let output = Outputtable.create ~pixelwidth ~pixelheight ~alias () in
+     let output = Outputtable.create ~pixelwidth ~pixelheight ~alias ?bg () in
      let extents = Option.value_exn world.World.extents in
      let output = Outputtable.new_viewport output extents in
      render_shapes output world.World.basics;

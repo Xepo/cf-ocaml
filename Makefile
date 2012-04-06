@@ -47,6 +47,8 @@ OPT=time ocamlfind ocamlopt \
 main: $(MAINSOURCES:.ml=.cmx)
 	$(OPT) -o $@ $^
 
+runtest: test
+	./test
 test: $(TESTSOURCES:.ml=.cmx)
 	$(OPT) -o $@ $^
 

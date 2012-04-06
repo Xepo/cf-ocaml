@@ -60,3 +60,17 @@ let _ =
      (output.Outputtable.pixelwidth,output.Outputtable.pixelheight)) in
      (printf "pixelviewport:%f,%f %f,%f\n" x1 y1 x2 y2)
      ;;
+
+
+
+let tra ?(x=0.0) ?(y=0.0) ?(w=1.0) ?(h=1.0) ?(rot=0.0) () =
+     (Matrix.translate x y
+     *| Matrix.rotate rot
+     *| Matrix.scale w h)
+
+let _ = 
+     let n = Rect.apply Rect.unit_rect (tra ~x:5.0 ~rot:90. ~w:2.0 ~h:2.0 ())
+     in
+     printf "%s" (Rect.to_string n)
+
+     

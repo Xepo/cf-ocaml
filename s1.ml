@@ -30,13 +30,18 @@ let rot_line () =
      (shape line *- (rot 45.) *- (tr 0. 5.)) ++
      shape line 
 
+
+(* t1 *)
 let surround () = 
-     many (360 / 45) (rot 45.) (circle *- (tr 2. 0.) *- (v 9))
+     many (360 / 45) (rot 45.) (circle *- (tr 2. 0.) *- (v 0))
 
 let rec t1 () = 
-     shape surround *- (v 9) ++
-     many 8 (rot 45.) (shape t1 *- (tra ~x:2.0 ~h:0.4 ~w:0.4 ()))
+     shape surround ++
+     many 4 (rot 90.) (shape t1 *- (tra ~x:2.0 ~s:0.4 ()))
+
+
+
 
 
      (*TODO: *- v 9 on surround isn't working*)
-let _ = Scene.render_scene ~w:700 ~h:700 ~alias:3 t1
+let _ = Scene.render_scene ~w:700 ~h:700 ~alias:3 ~bg:9 t1
