@@ -1,0 +1,36 @@
+time ocamlfind ocamlopt \
+		-verbose \
+	-I /opt/local/lib/ocaml/site-lib/core \
+	/opt/local/lib/ocaml/site-lib/core/libcore.a \
+	-thread \
+	-package unix \
+	-package threads \
+	-package extlib  \
+	-package dynlink \
+	-package "bin_prot.syntax" \
+	-package "sexplib.syntax" \
+	-package "variantslib.syntax" \
+	-package "fieldslib.syntax" \
+	-package "comparelib.syntax" \
+	-package "core" \
+	-linkpkg \
+	 \
+	-o main pixel.ml  vec.ml  matrix.ml  rect.ml  outputtable.ml  context.ml  basic_shape.ml  renderable.ml  scene.ml  s1.ml
+Effective set of compiler predicates: pkg_unix,pkg_threads.posix,pkg_threads,pkg_extlib,pkg_dynlink,pkg_camlp4,pkg_type-conv,pkg_bigarray,pkg_bin_prot,pkg_bin_prot.syntax,pkg_num.core,pkg_num,pkg_sexplib,pkg_sexplib.syntax,pkg_variantslib,pkg_variantslib.syntax,pkg_fieldslib,pkg_fieldslib.syntax,pkg_comparelib,pkg_comparelib.syntax,pkg_oUnit,pkg_pa_ounit,pkg_pa_pipebang,pkg_res,pkg_core,autolink,mt,mt_posix,native
++ ocamlopt.opt -verbose -I /opt/local/lib/ocaml/site-lib/core -o main -thread -I /opt/local/lib/ocaml/site-lib/extlib -I /opt/local/lib/ocaml/camlp4 -I /opt/local/lib/ocaml/site-lib/type-conv -I /opt/local/lib/ocaml/site-lib/bin_prot -I /opt/local/lib/ocaml/site-lib/num -I /opt/local/lib/ocaml/site-lib/sexplib -I /opt/local/lib/ocaml/site-lib/variantslib -I /opt/local/lib/ocaml/site-lib/fieldslib -I /opt/local/lib/ocaml/site-lib/comparelib -I /opt/local/lib/ocaml/site-lib/oUnit -I /opt/local/lib/ocaml/site-lib/pa_ounit -I /opt/local/lib/ocaml/site-lib/pa_pipebang -I /opt/local/lib/ocaml/site-lib/res -I /opt/local/lib/ocaml/site-lib/core /opt/local/lib/ocaml/unix.cmxa /opt/local/lib/ocaml/threads/threads.cmxa /opt/local/lib/ocaml/site-lib/extlib/extLib.cmxa /opt/local/lib/ocaml/bigarray.cmxa /opt/local/lib/ocaml/site-lib/bin_prot/bin_prot.cmxa /opt/local/lib/ocaml/nums.cmxa /opt/local/lib/ocaml/site-lib/sexplib/sexplib.cmxa /opt/local/lib/ocaml/site-lib/variantslib/variantslib.cmxa /opt/local/lib/ocaml/site-lib/fieldslib/fieldslib.cmxa /opt/local/lib/ocaml/site-lib/comparelib/comparelib.cmxa /opt/local/lib/ocaml/site-lib/oUnit/oUnit.cmxa /opt/local/lib/ocaml/site-lib/res/res.cmxa /opt/local/lib/ocaml/site-lib/core/core.cmxa /opt/local/lib/ocaml/site-lib/core/libcore.a pixel.ml vec.ml matrix.ml rect.ml outputtable.ml context.ml basic_shape.ml renderable.ml scene.ml s1.ml
++ as -arch x86_64 -o 'pixel.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasm2b9f8f.s'
++ as -arch x86_64 -o 'vec.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasmf957cf.s'
++ as -arch x86_64 -o 'matrix.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasm07ef40.s'
++ as -arch x86_64 -o 'rect.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasm4f22d6.s'
++ as -arch x86_64 -o 'outputtable.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasmcb93aa.s'
++ as -arch x86_64 -o 'context.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasm87b296.s'
++ as -arch x86_64 -o 'basic_shape.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasm119921.s'
++ as -arch x86_64 -o 'renderable.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasmff28bd.s'
++ as -arch x86_64 -o 'scene.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasm0484c0.s'
++ as -arch x86_64 -o 's1.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlasm400038.s'
++ as -arch x86_64 -o '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlstartup566551.o' '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlstartupe6420c.s'
++ /usr/bin/clang -o 'main'   '-L/opt/local/lib/ocaml/site-lib/core' '-L/opt/local/lib/ocaml/site-lib/extlib' '-L/opt/local/lib/ocaml/camlp4' '-L/opt/local/lib/ocaml/site-lib/type-conv' '-L/opt/local/lib/ocaml/site-lib/bin_prot' '-L/opt/local/lib/ocaml/site-lib/num' '-L/opt/local/lib/ocaml/site-lib/sexplib' '-L/opt/local/lib/ocaml/site-lib/variantslib' '-L/opt/local/lib/ocaml/site-lib/fieldslib' '-L/opt/local/lib/ocaml/site-lib/comparelib' '-L/opt/local/lib/ocaml/site-lib/oUnit' '-L/opt/local/lib/ocaml/site-lib/pa_ounit' '-L/opt/local/lib/ocaml/site-lib/pa_pipebang' '-L/opt/local/lib/ocaml/site-lib/res' '-L/opt/local/lib/ocaml/site-lib/core' '-L/opt/local/lib/ocaml/threads' '-L/opt/local/lib/ocaml'  '/var/folders/p5/t34j9vs51k7cfq7c7cx6wjqr0000gn/T/camlstartup566551.o' '/opt/local/lib/ocaml/std_exit.o' 's1.o' 'scene.o' 'renderable.o' 'basic_shape.o' 'context.o' 'outputtable.o' 'rect.o' 'matrix.o' 'vec.o' 'pixel.o' '/opt/local/lib/ocaml/site-lib/core/core.a' '/opt/local/lib/ocaml/site-lib/res/res.a' '/opt/local/lib/ocaml/site-lib/oUnit/oUnit.a' '/opt/local/lib/ocaml/site-lib/comparelib/comparelib.a' '/opt/local/lib/ocaml/site-lib/fieldslib/fieldslib.a' '/opt/local/lib/ocaml/site-lib/variantslib/variantslib.a' '/opt/local/lib/ocaml/site-lib/sexplib/sexplib.a' '/opt/local/lib/ocaml/nums.a' '/opt/local/lib/ocaml/site-lib/bin_prot/bin_prot.a' '/opt/local/lib/ocaml/bigarray.a' '/opt/local/lib/ocaml/site-lib/extlib/extLib.a' '/opt/local/lib/ocaml/threads/threads.a' '/opt/local/lib/ocaml/unix.a' '/opt/local/lib/ocaml/stdlib.a' '-lcore' 'lib/libcore.a' '-lnums' '-lbin_prot' 'lib/libbin_prot.a' '-lbigarray' '-lthreadsnat' '-lpthread' '-lunix' '/opt/local/lib/ocaml/site-lib/core/libcore.a' '/opt/local/lib/ocaml/libasmrun.a' 
+
+real	0m3.611s
+user	0m3.174s
+sys	0m0.367s

@@ -21,6 +21,8 @@ type t =
 
 let apply_context t context = 
      { t with context = context *| t.context; }
+let apply_context_rev t context = 
+     { t with context = t.context *| context; }
 
 let add_trace str = 
      List.map ~f:(fun r -> {r with trace=str ^ "(" ^ r.trace ^ ")"})
@@ -40,7 +42,6 @@ let rec expand t =
 let rec render output t = 
      match t.shape with
      | Shapes.Basic basic ->
-               printf "Rendering basic...\n";
                begin try
                     (Basic_shape.render ~v:t.value output t.context basic)
                with
