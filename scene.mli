@@ -1,12 +1,10 @@
 open Core.Std
+open Vec.Infix
+open Matrix.Infix
 module Settings : sig
      type t
 end
 
-val (=$) : Vec.t -> Vec.t -> bool
-val ( *|$ ) : Matrix.t -> Vec.t -> Vec.t
-val ( *| ) : Matrix.t -> Matrix.t -> Matrix.t
-val (=|) : Matrix.t -> Matrix.t -> bool
 val (+|) : Settings.t -> Settings.t -> Settings.t
 
 val flip_y : Settings.t
