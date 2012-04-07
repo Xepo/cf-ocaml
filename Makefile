@@ -22,9 +22,7 @@ image.png: image.in create_png
 
 #-unsafe \
 
-OPT=time ocamlfind ocamlopt \
-	-I /opt/local/lib/ocaml/site-lib/core \
-	/opt/local/lib/ocaml/site-lib/core/libcore.a \
+OCFINDPARAMS= -I /opt/local/lib/ocaml/site-lib/core \
 	-thread \
 	-package unix \
 	-package threads \
@@ -35,8 +33,18 @@ OPT=time ocamlfind ocamlopt \
 	-package "variantslib.syntax" \
 	-package "fieldslib.syntax" \
 	-package "comparelib.syntax" \
-	-package "core" \
+	-package "core"
+OPT=ocamlfind ocamlopt $(OCFINDPARAMS) \
+	/opt/local/lib/ocaml/site-lib/core/libcore.a \
 	-linkpkg
+DOC=ocamlfind ocamldoc -d "doc" -html $(OCFINDPARAMS)
+
+.PHONY: doc
+doc: 
+	pwd
+	echo $(OCFINDPARAMS)
+	$(DOC) $(ALLSOURCES)
+
 
 %.cmi: %.mli %.ml
 	$(OPT) -c -o $@ $<
@@ -57,3 +65,6 @@ clean:
 
 create_png: create_png.cpp
 	g++ -g create_png.cpp -o create_png `imlib2-config --libs` `imlib2-config --cflags`
+
+
+
