@@ -21,14 +21,12 @@ let in_unit = in_square (-0.5, -0.5) (0.5, 0.5)
 module Infix = struct
      let ( =$ ) ((x1,y1):t) ((x2,y2):t) : bool= ((Float.(=) x1 x2) && (Float.(=) y1 y2))
 end
-include Infix
 
 let to_string (x,y) = sprintf "(%f,%f)" x y
 
 let assert_equal v1 v2 =
+     let open Infix in
      if not (v1 =$ v2)
-     then begin
+     then
           printf "ASSERT FAILED: %s != %s" (to_string v1) (to_string v2);
-          assert (v1 =$ v2);
-     end else
-          assert (v1 =$ v2)
+     assert (v1 =$ v2)

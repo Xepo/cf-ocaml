@@ -1,11 +1,39 @@
 open Core.Std
 
 let pi = 3.14159
-module Row = struct
-     type t = float * float * float
+
+module T3 = struct
+     type 'a t = ('a * 'a * 'a)
+
+     let indices = [`i1; `i2; `i3;]
+     let get (c1,c2,c3) = 
+          function
+          | `i1 -> c1
+          | `i2 -> c2
+          | `i3 -> c3
+
+     let set : 'a . ('a * 'a * 'a) -> [`i1|`i2|`i3] -> 'a -> ('a *'a*'a) = 
+          fun (c1,c2,c3) i v ->
+          match i with
+          | `i1 -> (v,c2,c3)
+          | `i2 -> (c1,v,c3)
+          | `i3 -> (c1,c2,v)
 end
 
-type t = Row.t * Row.t * Row.t
+module Row = struct
+     type t = float T3.t
+
+     let cross (i1,i2,i3) (j1,j2,j3) =
+          (
+               (i2*.j3 -. i3*.j2),
+               (i3*.j1 -. i1*.j3),
+               (i1*.j2 -. i2*.j1)
+          )
+
+     let dot (i1,i2,i3) (j1,j2,j3) = (i1*.j1) +. (i2*.j2) +. (i3*.j3)
+
+end
+type t = Row.t T3.t
 
 let create row1 row2 row3 = (row1,row2,row3)
 
@@ -15,78 +43,24 @@ let identity =
           (0.0,1.0,0.0)
           (0.0,0.0,1.0)
 
-let t3_get (c1,c2,c3) = 
-     function
-     | `i1 -> c1
-     | `i2 -> c2
-     | `i3 -> c3
+let get m i j =
+     T3.get (T3.get m i) j
 
-let t3_set : 'a . ('a * 'a * 'a) -> [`i1|`i2|`i3] -> 'a -> ('a *'a*'a) = 
-     fun (c1,c2,c3) i v ->
-     match i with
-     | `i1 -> (v,c2,c3)
-     | `i2 -> (c1,v,c3)
-     | `i3 -> (c1,c2,v)
+let set : [`i1|`i2|`i3] -> [`i1|`i2|`i3] -> float -> t-> t =
+     fun i j v m ->
+     T3.set m i (T3.set (T3.get m i) j v) 
 
-let int_to_i = 
-     function
-     | 1 -> `i1
-     | 2 -> `i2
-     | 3 -> `i3
-     | _ as i -> failwithf "Invalid loc: %d\n" i ()
+let col m j = (get m `i1 j, get m `i2 j, get m `i3 j)
+let row = T3.get
 
-let get_i m i j =
-     t3_get (t3_get m i) j
-
-let set_i : t -> [`i1|`i2|`i3] -> [`i1|`i2|`i3] -> float -> t =
-     fun m i j v ->
-     t3_set m i (t3_set (t3_get m i) j v) 
-
-let l_to_i = 
-     function
-     | `l11 -> `i1,`i1
-     | `l12 -> `i1,`i2
-     | `l13 -> `i1,`i3
-     | `l21 -> `i2,`i1
-     | `l22 -> `i2,`i2
-     | `l23 -> `i2,`i3
-     | `l31 -> `i3,`i1
-     | `l32 -> `i3,`i2
-     | `l33 -> `i3,`i3
-
-let get ~l m =
-     let (i,j) = l_to_i l in
-     get_i m i j
-
-let set ~l ~v m =
-     let (i,j) = l_to_i l in
-     set_i m i j v
-
-let col m j = (get_i m `i1 j, get_i m `i2 j, get_i m `i3 j)
-let row = t3_get
-
-let map m ~f =
-     let z l m = set m ~l ~v:(f (l_to_i l) (get m ~l)) in
-     z `l11 m
-     |! z `l12
-     |! z `l13
-     |! z `l21
-     |! z `l22
-     |! z `l23
-     |! z `l31
-     |! z `l32
-     |! z `l33
-
-
-
-let cross (i1,i2,i3) (j1,j2,j3) =
-     (
-          (i2*.j3 -. i3*.j2),
-          (i3*.j1 -. i1*.j3),
-          (i1*.j2 -. i2*.j1)
-     )
-
-let dot (i1,i2,i3) (j1,j2,j3) = (i1*.j1) +. (i2*.j2) +. (i3*.j3)
+let mapi t ~f =
+     List.fold T3.indices ~init:t
+     ~f:(fun acc i ->
+          List.fold T3.indices ~init:acc
+          ~f:(fun acc j ->
+               let new_val = f (i,j) (get t i j) in
+               set i j new_val acc
+          ))
 
 module Infix = struct
      let ( *|$ ) m (x,y) : Vec.t = 
@@ -96,7 +70,7 @@ module Infix = struct
      let ( *| ) m1 m2 =
           let row_col i j = 
                List.fold [`i1;`i2;`i3;] ~init:0.0 ~f:(fun acc x ->
-                    acc +. (get_i m1 i x)  *. (get_i m2 x j))
+                    acc +. (get m1 i x)  *. (get m2 x j))
           in
           create
           ((row_col `i1 `i1),(row_col `i1 `i2), row_col `i1 `i3)
@@ -105,7 +79,7 @@ module Infix = struct
 
      let ( =| ) m1 m2 = m1 = m2
 
-     let ( *|. ) s m1 = map m1 ~f:(fun _ old -> old *. s)
+     let ( *|. ) s m1 = mapi m1 ~f:(fun _ old -> old *. s)
 end
 include Infix
 
@@ -113,7 +87,7 @@ include Infix
 
 let det m = 
      let (row1,row2,row3) = m in
-     let det = dot row1 (cross row2 row3) in
+     let det = Row.dot row1 (Row.cross row2 row3) in
      assert (not (Float.(=) det 0.));
      det
 
@@ -130,12 +104,11 @@ let invert m =
      let col3 = col m `i3 in
      let newm = 
           create
-               (cross col2 col3)
-               (cross col3 col1)
-               (cross col1 col2)
+               (Row.cross col2 col3)
+               (Row.cross col3 col1)
+               (Row.cross col1 col2)
      in
      idet *|. newm
-
 
 
 let to_string (r1,r2,r3) = 
@@ -147,13 +120,13 @@ let to_string (r1,r2,r3) =
 
 let translate x y =
      identity
-     |! set ~l:`l13 ~v:x
-     |! set ~l:`l23 ~v:y
+     |! set `i1 `i3 x
+     |! set `i2 `i3 y
 
 let scale x y =
      identity
-     |! set ~l:`l11 ~v:x
-     |! set ~l:`l22 ~v:y
+     |! set `i1 `i1 x
+     |! set `i2 `i2 y
 
 let rotate d = 
      let d = (d *. pi /. 180.) in

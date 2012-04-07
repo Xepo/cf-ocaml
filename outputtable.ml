@@ -94,7 +94,7 @@ let new_viewport t ((x1,y1),(x2,y2)) =
      in
      {t with base}
 
-let create ~pixelwidth ~pixelheight ~pixelborder ?(bg=0) ?(alias=3) () =
+let create ~pixelwidth ~pixelheight ?(pixelborder=0) ?(bg=0) ?(alias=3) () =
      assert (alias > 0);
      let pixelwidth  = pixelwidth*alias in
      let pixelheight  = pixelheight*alias in

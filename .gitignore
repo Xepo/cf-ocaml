@@ -3,6 +3,7 @@ a.out
 *.cmx
 *.cmi
 *.o
+*.png
 create_png
 image.in
 image.png
@@ -10,3 +11,4 @@ lib
 main
 test
 z
+doc
