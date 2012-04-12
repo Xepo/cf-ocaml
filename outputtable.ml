@@ -2,6 +2,11 @@ open Core.Std
 open Vec.Infix
 open Matrix.Infix
 
+module Cfcns = struct
+     external render_png : string -> int -> int -> Color.t array -> bool =
+          "render_png"
+end
+
 let fold_int_range ~init ~f lower upper = 
      let acc = ref init in
      for x = lower to (upper-1) do
@@ -17,19 +22,20 @@ type t =
           pixelheight: int;
           pixelborder: int;
           base: Matrix.t;
-          image: Pixel.t array;
+          image: Color.t array;
           alias_amt: int;
      }
 
 exception Found_pixel
 exception Invalid_pixel
 
-let set_pixel t (x,y) ~v =
+let set_pixel t (x,y) ~c =
      let loc = y * t.pixelwidth + x in
      if x >= t.pixelwidth || x < 0 || y >= t.pixelheight || y < 0 then
           raise Invalid_pixel
      else
-     t.image.(loc) <- v
+          (*TODO:Alpha blending*)
+     t.image.(loc) <- c
      (*;
      if loc = 12944
      then
@@ -61,9 +67,9 @@ let iter ((x1,y1),(x2,y2)) ~f t =
                let tvec = ibase *|$ (Vec.of_ints (x,y)) in
                match f tvec with
                | None -> ()
-               | Some v -> 
+               | Some c -> 
                          try 
-                              set_pixel t (x,y) ~v
+                              set_pixel t (x,y) ~c
                          with
                          | Found_pixel -> 
                                    printf "%d,%d-%d,%d" x1 y1 x2 y2;
@@ -96,7 +102,7 @@ let new_viewport t ((x1,y1),(x2,y2)) =
      in
      {t with base}
 
-let create ~pixelwidth ~pixelheight ?(pixelborder=0) ?(bg=0) ?(alias=3) () =
+let create ~pixelwidth ~pixelheight ?(pixelborder=0) ?(bg=Color.defaultbg) ?(alias=3) () =
      assert (alias > 0);
      let pixelwidth  = pixelwidth*alias in
      let pixelheight  = pixelheight*alias in
@@ -111,7 +117,7 @@ let rec row_to_string ?(x=0) ~y t =
      if x >= t.pixelheight 
      then ""
      else
-          (sprintf "%d" (t.image.(y*t.pixelwidth+x))) ^ 
+          (sprintf "%s" (Color.to_string (t.image.(y*t.pixelwidth+x)))) ^ 
                (row_to_string ~x:(x+1) ~y t)
 
 let rec to_string_all ?(y=0) t =
@@ -138,11 +144,17 @@ let to_string t =
 
 
 
-let write t filename =
+let write_txt t filename =
      let chan = open_out filename in
      fprintf chan "%d,%d\n" t.pixelwidth t.pixelheight;
      Array.iteri t.image ~f:(fun i x ->
-          fprintf chan "%d" x)
+          fprintf chan "%s" (Color.to_string x))
+
+let write t filename = 
+     let ret = Cfcns.render_png filename t.pixelwidth t.pixelheight t.image in
+     if ret
+     then printf "success.\n"
+     else printf "failure.\n"
 
 
 let antialias t =
@@ -152,15 +164,27 @@ let antialias t =
      in
      for x = 0 to aliased.pixelwidth-1 do
           for y = 0 to aliased.pixelheight-1 do
-               let sum = 
-                    fold_int_range 0 t.alias_amt ~init:0 ~f:(fun init ax ->
-                         fold_int_range 0 t.alias_amt ~init ~f:(fun acc ay ->
+               let (sumr,sumg,sumb,suma) = 
+                    fold_int_range 0 t.alias_amt ~init:(Color.black) ~f:(fun init ax ->
+                         fold_int_range 0 t.alias_amt ~init ~f:(fun
+                              (accr,accg,accb,acca) ay ->
                               let ax = x * t.alias_amt + ax in
                               let ay = y * t.alias_amt + ay in
-                              acc + t.image.(ay*t.pixelwidth+ax)))
+                              let (srcr,srcg,srcb,srca) =
+                                   t.image.(ay*t.pixelwidth+ax)
+                              in
+                              (*TODO:alpha compositing*)
+                              (accr+.srcr, accg+.srcg, accb+.srcb, acca *.
+                              srca)))
                in
+               let div = float_of_int (t.alias_amt * t.alias_amt) in
                aliased.image.(y*aliased.pixelwidth+x) <-
-                    (sum / t.alias_amt / t.alias_amt)
+                    (
+                         (sumr /. div),
+                         (sumg /. div),
+                         (sumb /. div),
+                         (suma /. div)
+                    )
           done
      done;
      aliased

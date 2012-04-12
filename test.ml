@@ -83,3 +83,10 @@ let _ =
      printf "%s\n\n" (Rect.to_string n)
 
      
+module Cfcns = struct
+     external render_png : string -> int -> int -> Color.t array -> bool =
+          "render_png"
+end
+
+let _ = 
+     Cfcns.render_png "test.png" 20 20 (Array.create (20*20) Color.red)

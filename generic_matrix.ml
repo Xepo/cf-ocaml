@@ -164,11 +164,12 @@ module Matrix =
 
                let rotate i j d : t = 
                     let d = (d *. pi /. 180.) in
-                    identity
-                    |! set i i (cos d)
-                    |! set j j (cos d)
-                    |! set i j (-. sin d)
-                    |! set j i (sin d)
+                    let ret = identity in
+                    let ret =  set i i (cos d) ret in
+                    let ret =  set j j (cos d) ret in
+                    let ret =  set i j (-. sin d) ret in
+                    let ret =  set j i (sin d) ret in
+                    ret
 
                let eq t1 t2 =
                     List.fold Row_g.indices 

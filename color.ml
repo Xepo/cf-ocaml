@@ -6,7 +6,8 @@ module Color = struct
      let create ~r ~g ~b ~a = 
           (r,g,b,a)
 
-     let black = (0.,0.,0.,0.,0.)
+     let invis = (0.,0.,0.,0.)
+     let black = (0.,0.,0.,1.)
      let white = (1.,1.,1.,1.)
 
      let red =   (1.,0.,0.,1.)
@@ -15,6 +16,8 @@ module Color = struct
 
      let to_string (r,g,b,a) = 
           sprintf "<%f,%f,%f,%f>" r g b a
+
+     let defaultbg = black
 
      let (=) (r1,g1,b1,a1) (r2,g2,b2,a2) = 
           let (=.) x y = Float.abs (x -. y) <. 0.001 in
@@ -30,6 +33,7 @@ module Color = struct
                false
                end
 end
+include Color
 
 module Transform = struct
      module T5 = struct
@@ -70,6 +74,10 @@ module Transform = struct
           (calc_row `i3),
           (calc_row `i4))
 
+     let of_color (a,b,c,d) = translate (a,b,c,d,1.0)
+     let get_color t = 
+          let (a,b,c,d,_) = mul_vec t (0.,0.,0.,0.,0.) in
+          (a,b,c,d)
      let scalar_mul v = scale (T5.create v)
      let brighten x = scalar_mul x
      let rotate_rg d = rotate `i1 `i2 d

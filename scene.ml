@@ -71,6 +71,7 @@ let render_scene ~w:pixelwidth ~h:pixelheight ?(alias=5) ?bg ~filename s =
      render_shapes output world.World.basics;
      printf "%s\n" (Outputtable.string_of_viewport output);
 
+     printf "Writing...\n";
      let aliased = Outputtable.antialias output in
      Outputtable.write aliased filename;
      printf "Done rendering %d shapes\n" (world.World.basic_count)

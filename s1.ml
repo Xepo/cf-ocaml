@@ -10,14 +10,14 @@ let rec line_right () =
                10.0, shape line_right *-  (sc 0.999 0.999) *- (tr (0.5) 0.) *- (rot 0.5)  ;
           ]
      in
-     square *- (v 9) *- (sc 1. 0.4)
+     square *- (red) *- (sc 1. 0.4)
      ++ shape c
 
 let rec line_down () =
      many (360 / 100) ((tr 0. 4.) +| (rot 3.)) (shape line_right)
 
 let rec line () = 
-     square *- (v 9) *- (sc 1. 0.4)
+     square *- (red) *- (sc 1. 0.4)
      ++ shape line *- (tr 0.5 0.)
 let scene () =
      shape line_down *- (rot 0.) ++
@@ -33,7 +33,7 @@ let rot_line () =
 
 (* t1 *)
 let surround () = 
-     many (360 / 45) (rot 45.) (circle *- (tr 2. 0.) *- (v 0))
+     many (360 / 45) (rot 45.) (circle *- (tr 2. 0.) *- (red))
 
 let rec t1 () = 
      shape surround ++
@@ -61,14 +61,14 @@ and r () =
 
 
 let m () =
-     (circle *- (sc 38. 38.) *- (v 9)) ++ (*brightness*)
+     (circle *- (sc 38. 38.) *- (red)) ++ (*brightness*)
      (circle *- (sc 39. 39.)) ++
      many 8 (rot 45.)
           (shape r *- (tra ~x:20. ~s:2. ()))
 
 let t2 () =
-     many 5 (tra ~s:0.5 ~rot:11. ()) (shape m *- (v 0))
+     many 5 (tra ~s:0.5 ~rot:11. ()) (shape m *- (green))
 
      (*TODO: pixelborder screws up t1*)
      (*TODO: *- v 9 on surround isn't working*)
-let _ = Scene.render_scene ~w:700 ~h:700 ~alias:9 ~bg:9 ~filename:"image.in" t1
+let _ = Scene.render_scene ~w:700 ~h:700 ~alias:3 ~bg:(1.0,1.0,1.0,1.0) ~filename:"image.png" t2
