@@ -48,7 +48,7 @@ let rec sq () =
           0.9, (square ++ 
                (square *- (tra ~w:1.2 ~h:0.65 ())));
 
-          0.1, (shape r *- (sc 0.5 0.5)) ++
+          0.2, (shape r *- (sc 0.5 0.5)) ++
                (shape r *- (flip_y) *- (sc 0.5 0.5)) ++
                square ++
                (square *- (tra ~s:0.7 ()));
@@ -57,17 +57,18 @@ let rec sq () =
      end
 
 and r () =
-     many 80 (tra ~x:1.0 ~rot:1.0 ~s:0.98 ()) (shape sq)
+     many 160 (tra ~x:1.0 ~rot:1.0 ~s:0.98 ()) (shape sq)
 
 
 let m () =
-     (circle *- (v 9) *- (sc 38. 38.)) ++ (*brightness*)
+     (circle *- (sc 38. 38.) *- (v 9)) ++ (*brightness*)
      (circle *- (sc 39. 39.)) ++
      many 8 (rot 45.)
           (shape r *- (tra ~x:20. ~s:2. ()))
 
 let t2 () =
-     many 5 (tra ~s:0.5 ~rot:11. ()) (shape m)
+     many 5 (tra ~s:0.5 ~rot:11. ()) (shape m *- (v 0))
 
+     (*TODO: pixelborder screws up t1*)
      (*TODO: *- v 9 on surround isn't working*)
-let _ = Scene.render_scene ~w:700 ~h:700 ~alias:9 ~bg:9 ~filename:"image.in" t2
+let _ = Scene.render_scene ~w:700 ~h:700 ~alias:9 ~bg:9 ~filename:"image.in" t1
