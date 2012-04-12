@@ -1,18 +1,16 @@
-tmp="/tmp/tmptimefile.$$"
 dotouch()  {
-     touch -r `ls -t | head -n1` $tmp
+     touch -r `ls -t | head -n1` /tmp/tmpfile
 }
 
-rm -f $tmp
+rm -f /tmp/tmpfile
 dotouch
 while(true) 
 do 
      sleep 1;
-     if [ "$(find * -newer $tmp)" != '' ]
+     if [ "$(find * -newer /tmp/tmpfile)" != '' ]
      then
           dotouch
           make $@ || true
-          echo .
           dotouch
      fi
 done

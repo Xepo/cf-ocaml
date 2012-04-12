@@ -86,13 +86,11 @@ let new_viewport t ((x1,y1),(x2,y2)) =
      let border = t.pixelborder * t.alias_amt in
      let borderx = (float_of_int border) /. viewport_width in
      let bordery = (float_of_int border) /. viewport_height in
-     let base : Matrix.t= 
+     let base = 
           Matrix.scale 
                ((float_of_int (t.pixelwidth - border)) /. viewport_width) 
                ((float_of_int (t.pixelheight - border)) /. viewport_height)
-     in
-     let base : Matrix.t =
-          base *| Matrix.translate (borderx -. x1) (bordery -. y1)
+          *| Matrix.translate (borderx -. x1) (bordery -. y1)
      in
      {t with base}
 
