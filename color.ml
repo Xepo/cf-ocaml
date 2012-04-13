@@ -33,13 +33,11 @@ module Color = struct
                false
                end
 end
-include Color
 
 module Transform = struct
      module T5 = struct
           type index =  [`i1|`i2|`i3|`i4|`i5]
           let indices = [`i1;`i2;`i3;`i4;`i5]
-
           type 'a t = 'a*'a*'a*'a*'a
 
           let get i (x1,x2,x3,x4,x5) = 
@@ -58,11 +56,139 @@ module Transform = struct
                | `i4 -> (x1,x2,x3,y,x5)
                | `i5 -> (x1,x2,x3,x4,y)
 
-          let create v = (v,v,v,v,v)
+          let create : 'a -> 'a t = fun v -> (v,v,v,v,v)
+     end
+     module Row = struct
+          type index =  T5.index
+          let indices = T5.indices
+          type t = float T5.t
+          let get = T5.get
+          let set = T5.set
+          let create : float -> t = T5.create
+          let dot (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) =
+               x1*.y1 +.
+               x2*.y2 +.
+               x3*.y3 +.
+               x4*.y4 +.
+               x5*.y5
+
+          let (=) (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) =
+               x1=.y1 &&
+               x2=.y2 &&
+               x3=.y3 &&
+               x4=.y4 &&
+               x5=.y5
+
+          let to_string (x1,x2,x3,x4,x5) = 
+               sprintf "[%f,%f,%f,%f,%f]"
+                    x1 x2 x3 x4 x5
+     end
+     module Mat = struct
+          type index =  T5.index
+          let indices = T5.indices
+          type t = Row.t T5.t
+          let get = T5.get
+          let set = T5.set
+          let create : Row.t -> t = T5.create
+          let (=) (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) =
+               Row.(=) x1 y1 &&
+               Row.(=) x2 y2 &&
+               Row.(=) x3 y3 &&
+               Row.(=) x4 y4 &&
+               Row.(=) x5 y5
+
+     end
+     type t = Mat.t
+
+     let get i j t = 
+          Mat.get j (Row.get i t)
+
+     let set i j v t = 
+          let row = Row.set j v (Mat.get i t) in
+          Mat.set i row t
+
+     let indices = 
+          List.fold Row.indices ~init:[] ~f:(fun acc i -> 
+               List.fold Row.indices ~init:acc ~f:(fun acc j ->
+                    (i,j) :: acc))
+
+     let row = Mat.get
+     let col j t = 
+          (
+               get `i1 j t,
+               get `i2 j t,
+               get `i3 j t,
+               get `i4 j t,
+               get `i5 j t
+          )
+
+     let initialize (f:(Mat.index * Mat.index) -> float) = 
+          let init = Mat.create (Row.create 0.0) in
+          List.fold indices ~init
+               ~f:(fun acc (i,j) -> set i j (f (i,j)) acc)
+
+     let identity =
+          initialize (fun (i,j) -> if i = j then 1.0 else 0.0)
+
+     let mapi t ~f =
+          initialize (fun (i,j) ->
+               f (i,j) (get i j t) )
+
+     let map ~f = mapi ~f:(fun (_,_) v -> f v)
+
+     let multiply t1 t2 =
+          let do_cell (i,j) = Row.dot (col i t1) (row j t2) in
+          initialize do_cell
+
+     let mul_vec t vec = 
+          (
+               Row.dot (row `i1 t) vec,
+               Row.dot (row `i2 t) vec,
+               Row.dot (row `i3 t) vec,
+               Row.dot (row `i4 t) vec,
+               Row.dot (row `i5 t) vec
+          )
+
+     let transpose t = 
+          initialize (fun (i,j) -> get j i t)
+
+     let to_string t =
+          String.concat ~sep:"\n" (List.map Mat.indices ~f:(fun i -> Row.to_string (row i t)))
+
+     let translate v =
+          initialize (fun (i,j) ->
+               if j = `i5 
+               then (get i j identity) +. (Row.get i v)
+               else (get i j identity))
+
+     let scale v =
+          initialize (fun (i,j) ->
+               if i = j 
+               then Row.get i v
+               else 0.0
+          )
+
+     let rotate i j d : t = 
+          let d = (d *. pi /. 180.) in
+          let ret = identity in
+          let ret =  set i i (cos d) ret in
+          let ret =  set j j (cos d) ret in
+          let ret =  set i j (-. sin d) ret in
+          let ret =  set j i (sin d) ret in
+          ret
+
+     let eq t1 t2 =
+          Row.(=) (row `i1 t1) (row `i1 t2) &&
+          Row.(=) (row `i2 t1) (row `i2 t2) &&
+          Row.(=) (row `i3 t1) (row `i3 t2) &&
+          Row.(=) (row `i4 t1) (row `i4 t2) &&
+          Row.(=) (row `i5 t1) (row `i5 t2)
+
+     module Infix_g = struct
+          let (=|) = eq
+          let ( *|) = multiply
      end
 
-
-     include Generic_matrix.Matrix(T5)
 
      let apply t (r,g,b,a) = 
           let calc_row i = 
@@ -74,9 +200,9 @@ module Transform = struct
           (calc_row `i3),
           (calc_row `i4))
 
-     let of_color (a,b,c,d) = translate (a,b,c,d,1.0)
+     let of_color (a,b,c,d) = translate (a,b,c,0.0,0.0)
      let get_color t = 
-          let (a,b,c,d,_) = mul_vec t (0.,0.,0.,0.,0.) in
+          let (a,b,c,d,_) = mul_vec t (0.,0.,0.,0.,1.) in
           (a,b,c,d)
      let scalar_mul v = scale (T5.create v)
      let brighten x = scalar_mul x
@@ -158,16 +284,29 @@ module Transform = struct
      *)
 
 end
+include Color
 
 
 
 let assert_eq eq to_str x y = 
      if eq x y 
-     then ()
+     then true
      else
-          printf "Assert failure: %s vs. %s\n" (to_str x) (to_str y)
+          (
+          printf "Assert failure: %s vs. %s\n" (to_str x) (to_str y);
+          false
+          )
 
 let _ = 
      let assert_eqc = assert_eq Color.(=) Color.to_string in
-     assert_eqc Color.red (Transform.apply Transform.identity Color.red);
-     assert_eqc Color.blue (Transform.apply (Transform.rotate_rb (90.)) Color.red)
+     printf "identity:%s\n\n" (Transform.to_string Transform.identity);
+     printf "red:%s\n\n" (Transform.to_string (Transform.of_color Color.red));
+     assert (assert_eqc Color.red (Transform.apply Transform.identity Color.red));
+     assert (assert_eqc Color.red (Transform.apply (Transform.of_color
+     Color.red) Color.black));
+     assert (assert_eqc Color.blue (Transform.apply (Transform.rotate_rb (90.))
+     Color.red))
+     (*;
+     printf "getc:%s\n" (Transform.to_string (Transform.of_color Color.red));
+     assert (assert_eqc Color.red (Transform.get_color (Transform.of_color
+     Color.red)))*)

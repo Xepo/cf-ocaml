@@ -82,7 +82,7 @@ let containing_rect t =
 
 
 module Operations = struct 
-     let flip_y = of_matrix (Matrix.create (1.,0.,0.) (0.,-1.,0.) (0.,0.,1.))
+     let flip_y = of_matrix (Matrix.set `i2 `i2 (-1.0) Matrix.identity)
      let tr = translate
      let sc = scale
      let rot = rotate
@@ -110,3 +110,4 @@ module Operations = struct
 
      let ( +| ) = combine
 end
+

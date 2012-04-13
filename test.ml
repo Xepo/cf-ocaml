@@ -22,7 +22,6 @@ let _ =
      let r:Vec.t = m *|$ v in
      assert (r =$ v);
      assert ((m *| m) =| m);
-     let assert_eqv = assert_eq (=) (Matrix.Row.to_string) in
      let assert_eqm = assert_eq (=|) (Matrix.to_string) in
 
      let m1 = (Matrix.translate 5. 1.) *| (Matrix.translate 10. 2.) in
