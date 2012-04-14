@@ -22,7 +22,6 @@ let _ =
      let r:Vec.t = m *|$ v in
      assert (r =$ v);
      assert ((m *| m) =| m);
-     let assert_eqv = assert_eq (=) (Matrix.Row.to_string) in
      let assert_eqm = assert_eq (=|) (Matrix.to_string) in
 
      let m1 = (Matrix.translate 5. 1.) *| (Matrix.translate 10. 2.) in
@@ -83,3 +82,10 @@ let _ =
      printf "%s\n\n" (Rect.to_string n)
 
      
+module Cfcns = struct
+     external render_png : string -> int -> int -> Color.t array -> bool =
+          "render_png"
+end
+
+let _ = 
+     Cfcns.render_png "test.png" 20 20 (Array.create (20*20) Color.red)

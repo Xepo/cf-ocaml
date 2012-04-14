@@ -20,9 +20,18 @@ val tra : ?x:float -> ?y:float -> ?s:float -> ?w:float -> ?h:float -> ?rot:float
      Settings.t
 val sc : float -> float -> Settings.t
 val rot : float -> Settings.t
-val v : int -> Settings.t
+val c : ?a:float -> float -> float -> float -> Settings.t
+val csc : float -> float -> float -> Settings.t
+val crot_rb : float -> Settings.t
+val bri : float -> Settings.t
 
 val many : int -> Settings.t -> Renderable.t list -> Renderable.t list 
 val choose : (float * Renderable.t list) list -> unit -> Renderable.t list
 val render_scene :
-     w:int -> h:int -> ?alias:int -> ?bg:int -> filename:string -> (unit -> Renderable.t list) -> unit
+     w:int -> h:int -> ?alias:int -> ?bg:Color.t -> filename:string -> (unit -> Renderable.t list) -> unit
+
+val black : Settings.t
+val white : Settings.t
+val red : Settings.t
+val green : Settings.t
+val blue : Settings.t

@@ -9,13 +9,13 @@ let to_string = function
      | Square -> "square"
 
 let render output settings t : unit =
-     let v = Settings.value settings in
+     let c = Settings.get_color settings in
      match t with
      | Square ->
-          Settings.iterate_unit_rect output settings ~f:(fun (_,_) -> Some v)
+          Settings.iterate_unit_rect output settings ~f:(fun (_,_) -> Some c)
      | Circle ->
           Settings.iterate_unit_rect output settings 
           ~f:(fun (x,y) -> 
                if (((x *. x) +. (y *. y)) <. 0.25)
-               then Some v
+               then Some c
                else None)

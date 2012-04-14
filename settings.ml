@@ -1,33 +1,38 @@
 open Core.Std
 open Vec.Infix
 open Matrix.Infix
+module ColorT = Color.Transform
 
 type t = 
      { 
-          value: Pixel.t option;
+          colort: ColorT.t;
           transform: Matrix.t; 
      }
 
-let identity = {value=None; transform=Matrix.identity}
+let identity = {colort=ColorT.identity; transform=Matrix.identity}
 
 let to_string t =
      sprintf "%s -> %s" 
-          (Option.value_map t.value
-               ~default:"N"
-               ~f:Pixel.to_string)
           (Matrix.to_string t.transform)
+          (ColorT.to_string t.colort)
 
-let value t = Option.value ~default:0 t.value
+let get_color t = ColorT.get_color t.colort
+let colort t = t.colort
 
 let of_matrix m = 
      {
-          value=None;
+          colort=ColorT.identity;
           transform=m;
      }
 
-let of_value v = 
+let of_color c = 
      {
-          value=Some v;
+          colort = ColorT.of_color c;
+          transform=Matrix.identity;
+     }
+let of_colort ct = 
+     {
+          colort=ct;
           transform=Matrix.identity;
      }
 
@@ -40,7 +45,7 @@ let add_value i1 i2 =
 
 let combine t1 t2 =
      {
-          value=add_value t1.value t2.value;
+          colort=ColorT.multiply t2.colort t1.colort;
           transform=t2.transform*|t1.transform;
      }
 
@@ -77,11 +82,21 @@ let containing_rect t =
 
 
 module Operations = struct 
-     let flip_y = of_matrix (Matrix.create (1.,0.,0.) (0.,-1.,0.) (0.,0.,1.))
+     let flip_y = of_matrix (Matrix.set `i2 `i2 (-1.0) Matrix.identity)
      let tr = translate
      let sc = scale
      let rot = rotate
-     let v = of_value
+
+     let black = of_color Color.black
+     let white = of_color Color.white
+     let red = of_color Color.red
+     let green = of_color Color.green
+     let blue = of_color Color.blue
+
+     let c ?(a=1.0) r g b = of_colort (ColorT.of_color (r,g,b,a))
+     let csc r g b = of_colort (ColorT.color_scale r g b)
+     let bri r = csc r r r
+     let crot_rb r = of_colort (ColorT.rotate_rb r)
      let tra ?(x=0.0) ?(y=0.0) ?s ?w ?h ?(rot=0.0) () =
           let w,h =
                match s,w,h with
@@ -97,4 +112,14 @@ module Operations = struct
           *| Matrix.scale w h)
 
      let ( +| ) = combine
+
+     let _ =
+          let co = (c 0.1 0.0 0.0) in
+          let co = co +| co in
+          let co = Color.Transform.get_color (co.colort) in
+          let co2 = Color.create ~a:0.0 0.2 0.0 0.0 in
+          printf "co2:%s\n" (Color.to_string co2);
+          printf "co:%s\n" (Color.to_string co);
+          assert (Color.(=) co co2)
 end
+
