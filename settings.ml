@@ -67,8 +67,8 @@ let iterate_unit_rect ~f output t =
 
 
 let size_of_unit t =
-     let (cxx,cxy,_) = (Matrix.row t.transform `i1) in
-     let (cyx,cyy,_) = (Matrix.row t.transform `i2) in
+     let (cxx,cxy,_) = (Matrix.row `i1 t.transform) in
+     let (cyx,cyy,_) = (Matrix.row `i2 t.transform) in
      let ( !! ) f = if f > 0.0 then f else 0. -. f in
      min ((!!cxx) +. (!!cxy)) ((!!cyx) +. (!!cyy))
 

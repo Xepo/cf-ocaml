@@ -1,6 +1,6 @@
-SOURCES=pixel.ml vec.ml matrix.ml rect.ml outputtable.ml settings.ml basic_shape.ml renderable.ml world.ml scene.ml scene.mli 
-TESTSOURCES=$(SOURCES) test.ml
-MAINSOURCES=$(SOURCES) s1.ml
+SOURCES=pixel.ml vec.ml generic_matrix.ml matrix.ml rect.ml outputtable.ml settings.ml basic_shape.ml renderable.ml world.ml scene.ml scene.mli 
+TESTSOURCES=$(SOURCES) test.ml color.ml
+MAINSOURCES=$(SOURCES) s1.ml 
 ALLSOURCES=$(SOURCES) test.ml s1.ml
 
 all: Makefile.fragment image.png
