@@ -1,9 +1,18 @@
 open Core.Std
 
+
+let assert_eq eq to_str x y = 
+     if eq x y 
+     then true
+     else
+          (
+          printf "Assert failure: %s vs. %s\n" (to_str x) (to_str y);
+          false
+          )
 let pi = 3.14159
 module Color = struct
      type t = float * float * float * float
-     let create ~r ~g ~b ~a = 
+     let create ~a r g b = 
           (r,g,b,a)
 
      let invis = (0.,0.,0.,0.)
@@ -137,7 +146,7 @@ module Transform = struct
      let map ~f = mapi ~f:(fun (_,_) v -> f v)
 
      let multiply t1 t2 =
-          let do_cell (i,j) = Row.dot (col i t1) (row j t2) in
+          let do_cell (i,j) = Row.dot (row i t1) (col j t2) in
           initialize do_cell
 
      let mul_vec t vec = 
@@ -201,6 +210,7 @@ module Transform = struct
           (calc_row `i4))
 
      let of_color (a,b,c,d) = translate (a,b,c,0.0,0.0)
+     let color_scale r g b = scale (r,g,b,1.0,1.0)
      let get_color t = 
           let (a,b,c,d,_) = mul_vec t (0.,0.,0.,0.,1.) in
           (a,b,c,d)
@@ -212,6 +222,22 @@ module Transform = struct
      let rotate_ra d = rotate `i1 `i4 d
      let rotate_ga d = rotate `i2 `i4 d
      let rotate_ba d = rotate `i3 `i4 d
+
+
+     let _ = 
+     assert ((1.0,0.0,0.0,0.0,0.0) = (row `i1 (
+          (1.0, 0.0, 0.0, 0.0, 0.0),
+          (0.0, 0.0, 0.0, 0.0, 0.0),
+          (0.0, 0.0, 0.0, 0.0, 0.0),
+          (0.0, 0.0, 0.0, 0.0, 0.0),
+          (0.0, 0.0, 0.0, 0.0, 0.0))));
+
+     assert ((1.0,2.0,0.0,0.0,0.0) = (col `i1 (
+          (1.0, 0.0, 0.0, 0.0, 0.0),
+          (2.0, 0.0, 0.0, 0.0, 0.0),
+          (0.0, 0.0, 0.0, 0.0, 0.0),
+          (0.0, 0.0, 0.0, 0.0, 0.0),
+          (0.0, 0.0, 0.0, 0.0, 0.0))))
      (*
      module Row = struct
           type t = float*float*float*float*float
@@ -288,15 +314,6 @@ include Color
 
 
 
-let assert_eq eq to_str x y = 
-     if eq x y 
-     then true
-     else
-          (
-          printf "Assert failure: %s vs. %s\n" (to_str x) (to_str y);
-          false
-          )
-
 let _ = 
      let assert_eqc = assert_eq Color.(=) Color.to_string in
      printf "identity:%s\n\n" (Transform.to_string Transform.identity);
@@ -305,7 +322,8 @@ let _ =
      assert (assert_eqc Color.red (Transform.apply (Transform.of_color
      Color.red) Color.black));
      assert (assert_eqc Color.blue (Transform.apply (Transform.rotate_rb (90.))
-     Color.red))
+     Color.red));
+
      (*;
      printf "getc:%s\n" (Transform.to_string (Transform.of_color Color.red));
      assert (assert_eqc Color.red (Transform.get_color (Transform.of_color

@@ -41,34 +41,35 @@ let rec t1 () =
 
 
 (* t2 *)
+let square = square *- (c 1.0 1.0 1.0)
 let rec sq () =
      begin 
-     choose
+     (choose
      [
           0.9, (square ++ 
                (square *- (tra ~w:1.2 ~h:0.65 ())));
 
-          0.2, (shape r *- (sc 0.5 0.5)) ++
-               (shape r *- (flip_y) *- (sc 0.5 0.5)) ++
+          0.5, (shape (r (bri 0.96)) *- (sc 0.5 0.5)) ++
+               (shape (r (bri 0.96)) *- (flip_y) *- (sc 0.5 0.5)) ++
                square ++
                (square *- (tra ~s:0.7 ()));
-     ]
-     ()
+     ] ()) 
      end
 
-and r () =
-     many 160 (tra ~x:1.0 ~rot:1.0 ~s:0.98 ()) (shape sq)
+and r c () =
+     many 160 (c +| (tra ~x:1.0 ~rot:1.0 ~s:0.98 ())) (shape sq)
 
 
 let m () =
-     (circle *- (sc 38. 38.) *- (red)) ++ (*brightness*)
-     (circle *- (sc 39. 39.)) ++
+     (circle *- (sc 38. 38.)) ++ (*brightness*)
+     (circle *- (sc 39. 39.) *- (white)) ++
      many 8 (rot 45.)
-          (shape r *- (tra ~x:20. ~s:2. ()))
+          (shape (r ((bri 0.96) +| (crot_rb 10.0))) *- (tra ~x:20. ~s:2. ()))
 
 let t2 () =
-     many 5 (tra ~s:0.5 ~rot:11. ()) (shape m *- (green))
+     many 5 ((tra ~s:0.5 ~rot:11. ()))
+     (shape m *- (c 0.01 0.0 0.0))
 
      (*TODO: pixelborder screws up t1*)
      (*TODO: *- v 9 on surround isn't working*)
-let _ = Scene.render_scene ~w:700 ~h:700 ~alias:3 ~bg:(1.0,1.0,1.0,1.0) ~filename:"image.png" t2
+let _ = Scene.render_scene ~w:700 ~h:700 ~alias:3 ~bg:(0.0,0.0,0.0,0.0) ~filename:"image.png" t2

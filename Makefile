@@ -63,10 +63,10 @@ doc:
 
 create_png.o: create_png.c
 	$(OPT) -c $(ccflags) $<
-lib_create_png.a: 
+lib_create_png.a: create_png.o
 	ocamlmklib -linkall -custom -o _create_png $(ldflags) $(ccflags) create_png.o
 
-%.cmi: %.mli %.ml
+%.cmi: %.mli
 	$(OPT) -c -o $@ $<
 
 %.cmx: %.ml

@@ -27,14 +27,15 @@ render_png(value ml_filename, value ml_w, value ml_h, value ml_arr)
      }
      for(long y=0; y<h; y++)
      {
-          printf("row %ld/%ld\n", y+1, h);
+          if (y % 100 == 99)
+               printf("row %ld/%ld\n", y+1, h);
           for(long x=0; x<w; x++)
           {
                value pixel = Field(ml_arr, y*h+x);
                int r = get_color(pixel, 0);
                int g = get_color(pixel, 1);
                int b = get_color(pixel, 2);
-               pData[y*h+x] = b << 16 | g << 8 | r;
+               pData[y*h+x] = r << 16 | g << 8 | b;
           }
      }
      Imlib_Image im = imlib_create_image_using_data(w,h,pData);

@@ -20,7 +20,10 @@ val tra : ?x:float -> ?y:float -> ?s:float -> ?w:float -> ?h:float -> ?rot:float
      Settings.t
 val sc : float -> float -> Settings.t
 val rot : float -> Settings.t
-val c : ?a:float -> r:float -> g:float -> b:float -> Settings.t
+val c : ?a:float -> float -> float -> float -> Settings.t
+val csc : float -> float -> float -> Settings.t
+val crot_rb : float -> Settings.t
+val bri : float -> Settings.t
 
 val many : int -> Settings.t -> Renderable.t list -> Renderable.t list 
 val choose : (float * Renderable.t list) list -> unit -> Renderable.t list

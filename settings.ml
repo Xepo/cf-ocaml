@@ -93,7 +93,10 @@ module Operations = struct
      let green = of_color Color.green
      let blue = of_color Color.blue
 
-     let c ?(a=1.0) ~r ~g ~b = of_colort (ColorT.of_color (r,g,b,a))
+     let c ?(a=1.0) r g b = of_colort (ColorT.of_color (r,g,b,a))
+     let csc r g b = of_colort (ColorT.color_scale r g b)
+     let bri r = csc r r r
+     let crot_rb r = of_colort (ColorT.rotate_rb r)
      let tra ?(x=0.0) ?(y=0.0) ?s ?w ?h ?(rot=0.0) () =
           let w,h =
                match s,w,h with
@@ -109,5 +112,14 @@ module Operations = struct
           *| Matrix.scale w h)
 
      let ( +| ) = combine
+
+     let _ =
+          let co = (c 0.1 0.0 0.0) in
+          let co = co +| co in
+          let co = Color.Transform.get_color (co.colort) in
+          let co2 = Color.create ~a:0.0 0.2 0.0 0.0 in
+          printf "co2:%s\n" (Color.to_string co2);
+          printf "co:%s\n" (Color.to_string co);
+          assert (Color.(=) co co2)
 end
 
